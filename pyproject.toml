@@ -1,0 +1,24 @@
+[project]
+name = "poets-catalog"
+version = "0.1.0"
+description = "PostgreSQL catalog and repeatable importer for chinese-poetry"
+requires-python = ">=3.11"
+dependencies = [
+  "SQLAlchemy>=2.0,<3",
+  "alembic>=1.13,<2",
+  "psycopg[binary]>=3.2,<4",
+  "opencc-python-reimplemented>=0.1.7,<1",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+poets-import = "poets_catalog.importer:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

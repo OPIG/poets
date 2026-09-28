@@ -51,7 +51,8 @@ class CatalogRepository:
     def _base(self):
         stmt = (select(Work, WorkVersion, WorkSearch)
                 .join(WorkVersion, and_(WorkVersion.work_id == Work.id, WorkVersion.is_current.is_(True)))
-                .join(WorkSearch, WorkSearch.work_version_id == WorkVersion.id))
+                .join(WorkSearch, WorkSearch.work_version_id == WorkVersion.id)
+                .where(Work.identity_status == "normal"))
         if self.mode == "public":
             stmt = stmt.join(PUBLIC_VERSIONS, PUBLIC_VERSIONS.c.version_id == WorkVersion.id)
         return stmt
@@ -60,7 +61,8 @@ class CatalogRepository:
         """公开模式只统计已审核作品，避免首页泄露暂存数量。"""
         with Session(self.db) as session:
             if self.mode == "preview":
-                counts = dict(session.execute(select(Work.genre, func.count()).group_by(Work.genre)).all())
+                counts = dict(session.execute(select(Work.genre, func.count())
+                    .where(Work.identity_status == "normal").group_by(Work.genre)).all())
             else:
                 visible = self._base().subquery()
                 counts = dict(session.execute(select(visible.c.genre, func.count()).group_by(visible.c.genre)).all())
@@ -86,7 +88,7 @@ class CatalogRepository:
                 }
                 stmt = stmt.where(or_(*conditions.values()) if field == "all" else conditions[field])
             if not q.strip() and self.mode == "preview":
-                count_stmt = select(func.count()).select_from(Work)
+                count_stmt = select(func.count()).select_from(Work).where(Work.identity_status == "normal")
                 if genre != "all":
                     count_stmt = count_stmt.where(Work.genre == genre)
                 total = session.scalar(count_stmt) or 0
@@ -115,12 +117,16 @@ class CatalogRepository:
                 author = session.get(Author, work.author_id)
                 if author is not None and author.identity_status != "archived":
                     author_public_id = author.public_id
+                    # 新版已审核小传优先，不能让早期导入的待审资料遮住已发布版。
                     bio_stmt = (select(AuthorBiography.body)
                                 .join(Material, Material.id == AuthorBiography.material_id)
                                 .where(AuthorBiography.author_id == work.author_id))
-                    if self.mode == "public":
-                        bio_stmt = bio_stmt.join(PUBLIC_MATERIALS, PUBLIC_MATERIALS.c.id == Material.id)
-                    biography = session.scalar(bio_stmt.order_by(AuthorBiography.id).limit(1))
+                    approved = bio_stmt.join(PUBLIC_MATERIALS, PUBLIC_MATERIALS.c.id == Material.id)
+                    biography = session.scalar(approved.order_by(AuthorBiography.id.desc()).limit(1))
+                    if biography is None and self.mode == "preview":
+                        # 本机预览允许查看尚未核权的材料，但不回退到已撤下的版本。
+                        biography = session.scalar(bio_stmt.where(Material.workflow_status != "withdrawn")
+                            .order_by(AuthorBiography.id.desc()).limit(1))
                     if biography and biography.strip() in {"--", "—", "-"}:
                         biography = None
             source = session.execute(select(Source.title, Source.url, Source.commit_sha)

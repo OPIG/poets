@@ -355,3 +355,187 @@ def test_approval_scope_is_explicit_web_only(admin):
     assert response.status_code == 422
     assert client.get(f'/admin/api/materials/{material_id}', headers=auth()).json()['status'] == 'staged'
     assert client.get(f'/works/{created["public_id"]}').status_code == 404
+
+
+def test_attribution_list_uses_readable_source_and_identity(admin):
+    """署名列表的主信息应是作品集与关联状态，而非导入状态码/JSON 路径。"""
+    client, _ = admin
+    rows = client.get('/admin/api/attributions', params={'q': '甲'}, headers=auth()).json()
+    assert rows
+    row = next(x for x in rows if x['source_path'].startswith('全唐诗/'))
+    assert row['collection'] == '唐诗作者资料'
+    assert row['identity_label'] == '已关联 · 待核对'
+    assert row['linked_author_name'] == '甲'
+    assert row['source_path'].endswith('authors.tang.json')
+    detail = client.get(f'/admin/api/attributions/{row["id"]}', headers=auth()).json()
+    assert detail['collection'] == row['collection']
+    assert 'raw_biography' in detail
+
+
+def test_attribution_unlinked_label_and_search_candidates(admin):
+    client, _ = admin
+    rows = client.get('/admin/api/attributions', params={'q': '蔡'}, headers=auth()).json()
+    if rows:
+        assert any(x['identity_label'] == '待考证' and x['linked_author_name'] is None for x in rows)
+    authors = client.get('/admin/api/authors', params={'q': '甲', 'limit': 10}, headers=auth()).json()
+    assert authors
+    assert all('id' in x and 'name' in x and 'dynasty' in x for x in authors)
+
+
+def test_attribution_binding_changes_only_relationship(admin):
+    """人工关联只改变外键与核对状态，不改规范人物主键和原始署名。"""
+    client, conn = admin
+    row = client.get('/admin/api/attributions', params={'q':'甲'}, headers=auth()).json()[0]
+    target = client.get('/admin/api/authors', params={'q':'乙'}, headers=auth()).json()[0]
+    before = client.get(f'/admin/api/attributions/{row["id"]}', headers=auth()).json()
+    response = client.put(f'/admin/api/attributions/{row["id"]}',
+                          params={'author_id':target['id']}, headers=auth())
+    assert response.status_code == 200
+    after = client.get(f'/admin/api/attributions/{row["id"]}', headers=auth()).json()
+    assert after['identity_label'] == '已人工核对'
+    assert after['linked_author_name'] == target['name']
+    assert after['original_name'] == before['original_name']
+    assert after['source_path'] == before['source_path']
+    assert client.get(f'/admin/api/authors/{target["id"]}', headers=auth()).json()['public_id'] == target['public_id']
+
+
+def test_archived_work_hidden_from_preview_but_retained_in_admin(admin):
+    """归档是从阅读界面撤下，不是物理删除；恢复仍保留原始版本。"""
+    client, conn = admin
+    from poets_catalog.catalog import CatalogRepository
+    created = client.post('/admin/api/works', json={
+        'genre': 'song_poem', 'author_name': '测试诗人', 'title': '归档示例',
+        'paragraphs': ['保留的原文。']}, headers=auth()).json()
+    preview = CatalogRepository(conn, 'preview')
+    assert preview.detail(__import__('uuid').UUID(created['public_id'])) is not None
+    assert client.delete(f'/admin/api/works/{created["id"]}', headers=auth()).status_code == 200
+    assert preview.detail(__import__('uuid').UUID(created['public_id'])) is None
+    assert client.get(f'/admin/api/works/{created["id"]}', headers=auth()).status_code == 200
+    assert client.post(f'/admin/api/works/{created["id"]}/restore', headers=auth()).status_code == 200
+    assert preview.detail(__import__('uuid').UUID(created['public_id'])) is not None
+
+
+def test_archived_filters_are_combined_with_search_and_count(admin):
+    """归档状态筛选应与关键词联动，并提供筛选后的准确分页总数。"""
+    client, _ = admin
+    author = client.post('/admin/api/authors', json={
+        'canonical_name': '筛选归档作者', 'dynasty': 'tang'}, headers=auth()).json()
+    author_id = author['id']
+    work = client.post('/admin/api/works', json={
+        'genre': 'tang_poem', 'author_name': '筛选归档作者', 'title': '筛选归档作品',
+        'paragraphs': ['临时测试原文。']}, headers=auth()).json()
+    work_id = work['id']
+    assert client.delete(f'/admin/api/authors/{author_id}', headers=auth()).status_code == 200
+    assert client.delete(f'/admin/api/works/{work_id}', headers=auth()).status_code == 200
+    for route, ident in (('authors', author_id), ('works', work_id)):
+        response = client.get(f'/admin/api/{route}', params={
+            'q': '筛选归档', 'status': 'archived', 'limit': 1, 'offset': 0}, headers=auth())
+        assert response.status_code == 200
+        assert response.headers['X-Total-Count'] == '1'
+        assert [row['id'] for row in response.json()] == [ident]
+        normal = client.get(f'/admin/api/{route}', params={
+            'q': '筛选归档', 'status': 'normal'}, headers=auth())
+        assert normal.status_code == 200
+        assert normal.headers['X-Total-Count'] == '0'
+        assert normal.json() == []
+        invalid = client.get(f'/admin/api/{route}', params={
+            'status': 'invalid'}, headers=auth())
+        assert invalid.status_code == 422
+
+
+def test_archived_author_restores_with_explicit_action(admin):
+    """归档作者只能执行恢复动作，不应重复归档或改动历史身份主键。"""
+    client, _ = admin
+    created = client.post('/admin/api/authors', json={
+        'canonical_name': '待恢复作者', 'dynasty': 'song'}, headers=auth()).json()
+    author_id = created['id']
+    assert client.delete(f'/admin/api/authors/{author_id}', headers=auth()).status_code == 200
+    assert client.delete(f'/admin/api/authors/{author_id}', headers=auth()).status_code == 409
+    restored = client.post(f'/admin/api/authors/{author_id}/restore', headers=auth())
+    assert restored.status_code == 200
+    assert restored.json()['status'] == 'unverified'
+    assert client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()['public_id'] == created['public_id']
+    assert client.post(f'/admin/api/authors/{author_id}/restore', headers=auth()).status_code == 409
+
+
+def test_author_biography_revision_keeps_original_and_requires_separate_withdrawal(admin):
+    """修订来源小传只追加待审版本，旧版及其来源不可覆盖；撤下须单独操作。"""
+    client, _ = admin
+    author_id = client.post('/admin/api/authors', json={
+        'canonical_name': '小传校订作者', 'dynasty': 'tang'}, headers=auth()).json()['id']
+    original = client.post(f'/admin/api/authors/{author_id}/biographies', json={
+        'body': '原始小传。', 'summary': '原摘要'}, headers=auth()).json()
+    before = client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()['biographies']
+    source = next(row for row in before if row['id'] == original['id'])
+    assert source['source_title'] and source['origin_type'] == 'editorial'
+    assert source['status'] == 'staged'
+    revision = client.post(
+        f'/admin/api/authors/{author_id}/biographies/{original["id"]}/revisions',
+        json={'body': '核对后的新小传。', 'summary': '新摘要'}, headers=auth())
+    assert revision.status_code == 200, revision.text
+    after = client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()['biographies']
+    old = next(row for row in after if row['id'] == original['id'])
+    new = next(row for row in after if row['id'] == revision.json()['id'])
+    assert old['body'] == '原始小传。' and old['status'] == 'staged'
+    assert new['body'] == '核对后的新小传。' and new['status'] == 'staged'
+    assert new['revises_biography_id'] == original['id']
+    assert new['source_title'] == '诗卷人工编辑'
+    wrong = client.post(
+        f'/admin/api/authors/{author_id + 1}/biographies/{original["id"]}/revisions',
+        json={'body': '不能跨作者修订'}, headers=auth())
+    assert wrong.status_code in (404, 422)
+    assert client.delete(f'/admin/api/materials/{original["material_id"]}', headers=auth()).status_code == 200
+    latest = client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()['biographies']
+    assert next(row for row in latest if row['id'] == original['id'])['status'] == 'withdrawn'
+    assert next(row for row in latest if row['id'] == revision.json()['id'])['status'] == 'staged'
+
+
+def test_imported_biography_shows_source_file_and_keeps_import_immutable(admin):
+    """导入小传可在后台查看源文件定位；修订不更改原仓库记录。"""
+    from poets_catalog.importer import load
+    from pathlib import Path
+    from poets_catalog.models import AuthorAttribution
+    client, conn = admin
+    root = Path(__file__).parent / 'fixtures' / 'v1'
+    load(root, ['tang'], 'biography-source-test')
+    author_id = conn.scalar(select(AuthorAttribution.author_id).where(
+        AuthorAttribution.source_path == '全唐诗/authors.tang.json',
+        AuthorAttribution.original_name == '乙').order_by(AuthorAttribution.id.desc()).limit(1))
+    detail = client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()
+    imported = next(b for b in detail['biographies'] if b['origin_type'] == 'imported')
+    assert imported['source_title'] == 'chinese-poetry'
+    assert imported['source_path'] == '全唐诗/authors.tang.json'
+    assert imported['source_index'] == 2
+    assert '/blob/' in imported['source_file_url']
+    created = client.post(f'/admin/api/authors/{author_id}/biographies/{imported["id"]}/revisions',
+                          json={'body':'自行考证后另写的小传。'}, headers=auth())
+    assert created.status_code == 200
+    later = client.get(f'/admin/api/authors/{author_id}', headers=auth()).json()['biographies']
+    assert next(b for b in later if b['id'] == imported['id'])['body'] == imported['body']
+    assert next(b for b in later if b['id'] == created.json()['id'])['revises_biography_id'] == imported['id']
+
+
+def test_preview_prefers_approved_new_biography_over_staged_import(admin):
+    """作者有待审旧版和已发布新版时，预览作品应展示已发布小传。"""
+    from uuid import UUID
+    from poets_catalog.catalog import CatalogRepository
+    client, conn = admin
+    author_id = client.post('/admin/api/authors', json={
+        'canonical_name': '多版小传作者', 'dynasty': 'tang'}, headers=auth()).json()['id']
+    old = client.post(f'/admin/api/authors/{author_id}/biographies', json={
+        'body': '旧版待审核小传。'}, headers=auth()).json()
+    new = client.post(f'/admin/api/authors/{author_id}/biographies/{old["id"]}/revisions',
+                      json={'body': '已核权的新版小传。'}, headers=auth()).json()
+    approval = {'decision': 'approved', 'legal_basis': '测试原创',
+                'permitted_scope': 'web', 'evidence_uri': 'test://permission'}
+    assert client.post(f'/admin/api/materials/{new["material_id"]}/reviews',
+                       json=approval, headers=auth()).status_code == 200
+    work = client.post('/admin/api/works', json={
+        'genre': 'tang_poem', 'author_name': '多版小传作者', 'author_id': author_id,
+        'title': '测试作品', 'paragraphs': ['正文。']}, headers=auth()).json()
+    detail = CatalogRepository(conn, 'preview').detail(UUID(work['public_id']))
+    assert detail['author_bio'] == '已核权的新版小传。'
+    # 一旦撤下新版，预览可回退到仍在库的旧版；公开模式不应回退到未审旧版。
+    assert client.delete(f'/admin/api/materials/{new["material_id"]}', headers=auth()).status_code == 200
+    detail = CatalogRepository(conn, 'preview').detail(UUID(work['public_id']))
+    assert detail['author_bio'] == '旧版待审核小传。'

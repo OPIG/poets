@@ -86,9 +86,25 @@ def update_author(session: Session, ident: int, data: AuthorInput):
 
 
 def archive_author(session: Session, ident: int):
-    author = require(session, Author, ident)
+    author = session.get(Author, ident, with_for_update=True)
+    if author is None:
+        raise HTTPException(404, "作者不存在")
+    if author.identity_status == "archived":
+        raise HTTPException(409, "作者已归档，请使用恢复操作")
     author.identity_status = "archived"
     audit(session, "archive", "author", ident)
+
+
+def restore_author(session: Session, ident: int):
+    """只恢复到待考证，不凭恢复动作宣称身份已人工核验。"""
+    author = session.get(Author, ident, with_for_update=True)
+    if author is None:
+        raise HTTPException(404, "作者不存在")
+    if author.identity_status != "archived":
+        raise HTTPException(409, "作者未归档，无需恢复")
+    author.identity_status = "unverified"
+    audit(session, "restore", "author", ident)
+    return author
 
 
 def validate_author(session: Session, author_id: int | None, name: str):
@@ -165,6 +181,10 @@ def archive_work(session: Session, ident: int, restore: bool = False):
     work = session.get(Work, ident, with_for_update=True)
     if work is None:
         raise HTTPException(404, "作品不存在")
+    if restore and work.identity_status != "archived":
+        raise HTTPException(409, "作品未归档，无需恢复")
+    if not restore and work.identity_status == "archived":
+        raise HTTPException(409, "作品已归档，请使用恢复操作")
     work.identity_status = "normal" if restore else "archived"
     versions = session.scalars(select(WorkVersion).where(WorkVersion.work_id == work.id)).all()
     for version in versions:
@@ -174,18 +194,26 @@ def archive_work(session: Session, ident: int, restore: bool = False):
     return work
 
 
-def create_biography(session: Session, author_id: int, data: BiographyInput):
+def create_biography(session: Session, author_id: int, data: BiographyInput, revises_biography_id: int | None = None):
     require(session, Author, author_id)
+    if revises_biography_id is not None:
+        previous = require(session, AuthorBiography, revises_biography_id)
+        if previous.author_id != author_id:
+            raise HTTPException(422, "不能跨作者修订小传")
     source_id = choose_source(session, data.source_id)
     material = Material(external_key=f"admin:bio:{uuid4()}", kind="biography", source_id=source_id,
                         language_tag="zh", origin_type="editorial", workflow_status="staged",
                         content_hash=digest({"body": data.body, "summary": data.summary}))
     session.add(material)
     session.flush()
-    bio = AuthorBiography(author_id=author_id, material_id=material.id, body=data.body, summary=data.summary)
+    bio = AuthorBiography(author_id=author_id, material_id=material.id,
+                          revises_biography_id=revises_biography_id,
+                          body=data.body, summary=data.summary)
     session.add(bio)
     session.flush()
-    audit(session, "create", "biography", bio.id, {"author_id": author_id, "material_id": material.id})
+    audit(session, "revise" if revises_biography_id is not None else "create", "biography", bio.id,
+          {"author_id": author_id, "material_id": material.id,
+           "revises_biography_id": revises_biography_id})
     return bio
 
 

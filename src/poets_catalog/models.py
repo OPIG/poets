@@ -178,11 +178,15 @@ class AuthorEvent(Base):
 
 
 class AuthorBiography(Base):
-    """人物简介正文；每个版本都有单独材料和权利审查。"""
+    """人物简介正文；修订追加新行，并保留来源版本及独立的权利审查。"""
     __tablename__ = "author_biographies"
     id: Mapped[int] = pk()
     author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
     material_id: Mapped[int] = mapped_column(ForeignKey("materials.id"), unique=True)
+    revises_biography_id: Mapped[int | None] = mapped_column(
+        ForeignKey("author_biographies.id", name="fk_author_biographies_revises"),
+        index=True,
+    )
     body: Mapped[str] = mapped_column(Text)
     summary: Mapped[str | None] = mapped_column(Text)
 

@@ -19,6 +19,7 @@ from ..models import (
 )
 from . import service, auth
 from .audit_view import present_audit
+from ..catalog import github_source_links
 from .schemas import (AuthorInput, BiographyInput, CommentaryInput, ReviewInput, SourceInput,
                       TranslationInput, WorkInput, WorkDateInput, AuthorEventInput, PinyinInput)
 
@@ -139,11 +140,17 @@ def register_admin(app, db: Engine) -> None:
         return {"id": row.id, "key": row.key}
 
     @router.get("/api/authors", dependencies=[Depends(guard)])
-    def authors(response: Response, q: str = Query("", max_length=80), limit: int = Query(30, ge=1, le=100),
+    def authors(response: Response, q: str = Query("", max_length=80),
+                status: str = Query("all", pattern="^(all|normal|archived)$"),
+                limit: int = Query(30, ge=1, le=100),
                 offset: int = Query(0, ge=0), current: Session = Depends(session)):
         stmt = select(Author)
         if q.strip():
             stmt = stmt.where(Author.canonical_name.ilike(f"%{q.strip()}%"))
+        if status == "archived":
+            stmt = stmt.where(Author.identity_status == "archived")
+        elif status == "normal":
+            stmt = stmt.where(Author.identity_status != "archived")
         response.headers["X-Total-Count"] = str(current.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
         rows = current.scalars(stmt.order_by(Author.id.desc()).offset(offset).limit(limit)).all()
         return [{"id": row.id, "public_id": str(row.public_id), "name": row.canonical_name,
@@ -152,14 +159,38 @@ def register_admin(app, db: Engine) -> None:
     @router.get("/api/authors/{ident}", dependencies=[Depends(guard)])
     def author_detail(ident: int, current: Session = Depends(session)):
         author = service.require(current, Author, ident)
-        bio = current.execute(select(AuthorBiography.id, AuthorBiography.material_id, AuthorBiography.body,
-                                     Material.workflow_status).join(Material, AuthorBiography.material_id == Material.id)
-                              .where(AuthorBiography.author_id == ident).order_by(AuthorBiography.id.desc()).limit(10)).all()
+        # 返回所有小传版本及其独立审核状态；导入来源的具体文件只在管理端显示。
+        rows = current.execute(
+            select(AuthorBiography, Material, Source)
+            .join(Material, AuthorBiography.material_id == Material.id)
+            .outerjoin(Source, Source.id == Material.source_id)
+            .where(AuthorBiography.author_id == ident)
+            .order_by(AuthorBiography.id.desc())
+        ).all()
+        biographies = []
+        for biography, material, source in rows:
+            original = current.scalar(select(AuthorAttribution).where(
+                AuthorAttribution.author_id == ident,
+                AuthorAttribution.source_id == material.source_id,
+                AuthorAttribution.raw_biography == biography.body,
+            ).order_by(AuthorAttribution.id).limit(1)) if material.origin_type == "imported" else None
+            _, file_url = github_source_links(source.url, source.commit_sha, original.source_path) \
+                if source and original else (None, None)
+            biographies.append({
+                "id": biography.id, "material_id": material.id, "body": biography.body,
+                "summary": biography.summary, "status": material.workflow_status,
+                "origin_type": material.origin_type, "source_id": material.source_id,
+                "source_title": source.title if source else None,
+                "source_path": original.source_path if original else None,
+                "source_index": original.source_index if original else None,
+                "source_file_url": file_url,
+                "revises_biography_id": biography.revises_biography_id,
+            })
         return {"id": author.id, "public_id": str(author.public_id), "canonical_name": author.canonical_name,
                 "dynasty": author.dynasty, "identity_status": author.identity_status,
                 "birth_year_min": author.birth_year_min, "birth_year_max": author.birth_year_max,
                 "death_year_min": author.death_year_min, "death_year_max": author.death_year_max,
-                "biographies": [{"id": i, "material_id": m, "body": b, "status": st} for i, m, b, st in bio]}
+                "biographies": biographies}
 
     @router.post("/api/authors", dependencies=[Depends(guard)])
     def author_create(data: AuthorInput, current: Session = Depends(transaction)):
@@ -176,19 +207,35 @@ def register_admin(app, db: Engine) -> None:
         service.archive_author(current, ident)
         return {"id": ident, "status": "archived"}
 
+    @router.post("/api/authors/{ident}/restore", dependencies=[Depends(guard)])
+    def author_restore(ident: int, current: Session = Depends(transaction)):
+        author = service.restore_author(current, ident)
+        return {"id": author.id, "status": author.identity_status}
+
     @router.post("/api/authors/{ident}/biographies", dependencies=[Depends(guard)])
     def biography_create(ident: int, data: BiographyInput, current: Session = Depends(transaction)):
         bio = service.create_biography(current, ident, data)
         return {"id": bio.id, "material_id": bio.material_id}
 
+    @router.post("/api/authors/{ident}/biographies/{biography_id}/revisions", dependencies=[Depends(guard)])
+    def biography_revise(ident: int, biography_id: int, data: BiographyInput,
+                         current: Session = Depends(transaction)):
+        biography = service.create_biography(current, ident, data, revises_biography_id=biography_id)
+        return {"id": biography.id, "material_id": biography.material_id,
+                "revises_biography_id": biography.revises_biography_id}
+
     @router.get("/api/works", dependencies=[Depends(guard)])
-    def works(response: Response, q: str = Query("", max_length=80), limit: int = Query(30, ge=1, le=100),
+    def works(response: Response, q: str = Query("", max_length=80),
+              status: str = Query("all", pattern="^(all|normal|archived)$"),
+              limit: int = Query(30, ge=1, le=100),
               offset: int = Query(0, ge=0), current: Session = Depends(session)):
         stmt = select(Work, WorkVersion).join(WorkVersion, WorkVersion.work_id == Work.id).where(WorkVersion.is_current.is_(True))
         if q.strip():
             pattern = f"%{q.strip()}%"
             stmt = stmt.where(Work.original_author_name.ilike(pattern) | WorkVersion.title.ilike(pattern) |
                               WorkVersion.rhythmic.ilike(pattern))
+        if status != "all":
+            stmt = stmt.where(Work.identity_status == status)
         response.headers["X-Total-Count"] = str(current.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
         rows = current.execute(stmt.order_by(Work.id.desc()).offset(offset).limit(limit)).all()
         return [{"id": w.id, "public_id": str(w.public_id), "genre": w.genre,
@@ -346,6 +393,24 @@ def register_admin(app, db: Engine) -> None:
         rows = current.scalars(select(AdminAuditLog).order_by(AdminAuditLog.id.desc()).offset(offset).limit(limit)).all()
         return [present_audit(current, row) for row in rows]
 
+    def attribution_view(row: AuthorAttribution, current: Session, *, detail: bool = False):
+        # 此处的状态表示导入匹配途径，不代表历史人物身份已考证。
+        path = row.source_path
+        collection = ("唐诗作者资料" if path.endswith("authors.tang.json") else
+                      "宋诗作者资料" if path.endswith("authors.song.json") else
+                      "宋词作者资料" if path.endswith("author.song.json") else "其他作者资料")
+        author = current.get(Author, row.author_id) if row.author_id else None
+        data = {"id": row.id, "original_name": row.original_name,
+                "author_id": row.author_id, "linked_author_name": author.canonical_name if author else None,
+                "linked_author_dynasty": author.dynasty if author else None,
+                "identity_label": ("已人工核对" if row.match_status == "reviewed" else "已关联 · 待核对") if author else "待考证",
+                "collection": collection, "source_path": path, "source_index": row.source_index,
+                "match_status": row.match_status}
+        if detail:
+            data.update(raw_biography=row.raw_biography, raw_short_biography=row.raw_short_biography,
+                        original_id=row.original_id)
+        return data
+
     @router.get("/api/attributions", dependencies=[Depends(guard)])
     def attributions(response: Response, q: str = Query("", max_length=80), limit: int = Query(30, ge=1, le=100),
                      offset: int = Query(0, ge=0), current: Session = Depends(session)):
@@ -354,9 +419,11 @@ def register_admin(app, db: Engine) -> None:
             stmt = stmt.where(AuthorAttribution.original_name.ilike(f"%{q.strip()}%"))
         response.headers["X-Total-Count"] = str(current.scalar(select(func.count()).select_from(stmt.subquery())) or 0)
         rows = current.scalars(stmt.order_by(AuthorAttribution.id).offset(offset).limit(limit)).all()
-        return [{"id": row.id, "original_name": row.original_name, "author_id": row.author_id,
-                 "source_path": row.source_path, "source_index": row.source_index,
-                 "match_status": row.match_status} for row in rows]
+        return [attribution_view(row, current) for row in rows]
+
+    @router.get("/api/attributions/{ident}", dependencies=[Depends(guard)])
+    def attribution_detail(ident: int, current: Session = Depends(session)):
+        return attribution_view(service.require(current, AuthorAttribution, ident), current, detail=True)
 
     @router.put("/api/attributions/{ident}", dependencies=[Depends(guard)])
     def attribution_match(ident: int, author_id: int | None = None, current: Session = Depends(transaction)):

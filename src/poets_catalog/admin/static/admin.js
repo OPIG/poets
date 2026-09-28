@@ -8,10 +8,16 @@
   const loadingMarkup=`<div class="loading-scene" role="status" aria-live="polite"><div class="loading-mark" aria-hidden="true"><span class="loading-ring"></span><span class="loading-character">诗</span></div><p class="loading-title">正为你展卷</p><p class="loading-caption">笔墨轻启，诗意将至</p><div class="loading-rule" aria-hidden="true"><span></span></div></div>`;
   let offset = 0;
   let query = '';
+  const archiveFilters={works:'all',authors:'all'};
   const $ = selector => document.querySelector(selector);
   const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const labels = {works:'作品管理', authors:'作者资料', attributions:'署名消歧', materials:'内容审核', sources:'来源登记', audit:'操作记录'};
   const materialLabels={original:'作品原文',biography:'作者小传',translation:'作品译文',commentary:'作品赏析',pinyin:'逐字拼音'};
+  const dynastyLabels={tang:'唐代',song:'宋代',other:'其他'};
+  const genreLabels={tang_poem:'唐诗',song_poem:'宋诗',song_ci:'宋词'};
+  const authorStatusLabels={unverified:'人物身份待考证',verified:'人物身份已核对',archived:'人物资料已归档'};
+  const workStatusLabels={normal:'在库（未归档）',archived:'已归档（查阅页隐藏）'};
+
   function errorText(detail) {
     if (typeof detail==='string') return detail;
     if (Array.isArray(detail)) return detail.map(item=>item.msg?.replace(/^Value error,\s*/,'')||'请检查输入内容').join('；');
@@ -88,7 +94,7 @@
     holder.scrollTop=0;
     $('#cancel-edit').onclick=()=>closeEditor();
     $('#close-editor').onclick=()=>closeEditor();
-    $('#edit-form').onsubmit=async event=>{event.preventDefault();try{await submit(formData(event.currentTarget));}catch(err){dialogError(err);return;}closeEditor();notify('保存成功');load().catch(showError);};
+    $('#edit-form').onsubmit=async event=>{event.preventDefault();try{await submit(formData(event.currentTarget));}catch(err){dialogError(err);return;}closeEditor();notify('保存成功');if($('#editor').open && $('#author-biographies'))refreshAuthorBiographies(Number($('#author-biographies').dataset.authorId)).catch(dialogError);load().catch(showError);};
     if (!dialog.open) dialog.showModal();
     $('#edit-form input, #edit-form select, #edit-form textarea')?.focus();
   }
@@ -103,7 +109,7 @@
       (item?.author_id ? `<p class="identity-note">已关联规范人物（关联不可在原文修订中更改）</p>` : '')+
       field('诗题','title',v?.title||'')+field('词牌','rhythmic',v?.rhythmic||'')+
       field('正文（每行一段）','paragraphs',(v?.paragraphs||[]).join('\n'),{textarea:true,required:true})+
-      field('标签（逗号分隔）','tags',(v?.tags||[]).join(', '),{full:true})+
+      field('作品标签（可选）','tags',(v?.tags||[]).join(', '),{full:true,placeholder:'例如：春天, 送别, 乐府',help:'用于按主题、体裁或选本检索；多个标签用英文逗号分隔。不填诗题、作者、原文或未经核实的年代。'})+
       field('序言','prologue',v?.prologue||'',{textarea:true}),
       async raw=>{
         const data={genre:raw.genre,author_name:raw.author_name.trim(),author_id:null,
@@ -111,19 +117,86 @@
           paragraphs:raw.paragraphs.split('\n').map(x=>x.trim()).filter(Boolean),
           tags:raw.tags.split(',').map(x=>x.trim()).filter(Boolean)};
         await write(item?`/works/${item.id}`:'/works',item?'PUT':'POST',data);
-      },item?`<button type="button" class="danger" id="archive-work">${item.identity_status==='archived'?'恢复作品':'归档作品'}</button>`:'');
-    if(item) $('#archive-work').onclick=async()=>{if(!confirm('归档会撤下全部原文；恢复后仍需重新审核。确定继续？'))return;try{await write(`/works/${item.id}${item.identity_status==='archived'?'/restore':''}`,item.identity_status==='archived'?'POST':'DELETE');closeEditor(true);await load();}catch(err){notify(err.message,true);}};
+      },item?item.identity_status==='archived'
+        ?'<button type="button" class="restore-action" id="restore-work">恢复作品</button>'
+        :'<button type="button" class="danger" id="archive-work">归档并撤下作品</button>':'');
+    if(item?.identity_status==='archived') $('#restore-work').onclick=async()=>{
+      if(!confirm('恢复后作品会回到在库状态，但不会自动公开；原文需重新完成权利审核。确定恢复？'))return;
+      try{await write(`/works/${item.id}/restore`,'POST');closeEditor(true);await load();}catch(err){dialogError(err);}
+    };
+    else if(item) $('#archive-work').onclick=async()=>{
+      if(!confirm('归档后作品会从查阅页隐藏，原文版本和审核历史仍保留。确定归档？'))return;
+      try{await write(`/works/${item.id}`,'DELETE');closeEditor(true);await load();}catch(err){dialogError(err);}
+    };
+  }
+  const biographyStatus={staged:'待审核',published:'已发布',withdrawn:'已撤下'};
+  const biographyOrigin={imported:'原仓库导入',editorial:'人工编辑'};
+  function renderBiographyVersions(item) {
+    const holder=$('#author-biographies');
+    if(!holder)return;
+    holder.dataset.authorId=item.id;
+    holder.replaceChildren();
+    const heading=document.createElement('h3');heading.textContent=`已有小传（${item.biographies.length}）`;
+    holder.append(heading);
+    const intro=document.createElement('p');intro.className='bio-intro';
+    intro.textContent='旧版只作留存；修订会新增一份待审核小传，不会覆盖导入原文或自动撤下旧版。';
+    holder.append(intro);
+    if(!item.biographies.length){const empty=document.createElement('p');empty.className='bio-empty';empty.textContent='暂无小传。可点击下方“新增小传”编写。';holder.append(empty);return;}
+    for(const bio of item.biographies){
+      const article=document.createElement('article');article.className='bio-edition';
+      const label=document.createElement('strong');label.textContent=`小传 #${bio.id} · ${biographyStatus[bio.status]||bio.status}`;
+      const meta=document.createElement('p');meta.className='bio-meta';
+      meta.textContent=`${biographyOrigin[bio.origin_type]||bio.origin_type} · ${bio.source_title||'来源待补充'}${bio.revises_biography_id?' · 修订自 #'+bio.revises_biography_id:''}`;
+      const body=document.createElement('details');const summary=document.createElement('summary');summary.textContent='查看小传全文';
+      const text=document.createElement('p');text.textContent=bio.body;body.append(summary,text);
+      article.append(label,meta,body);
+      if(bio.source_path){const source=document.createElement('p');source.className='bio-source';
+        source.textContent=`源文件：${bio.source_path} · 第 ${bio.source_index+1} 条`;
+        article.append(source);
+        if(bio.source_file_url){const link=document.createElement('a');link.href=bio.source_file_url;link.target='_blank';link.rel='noopener noreferrer';link.textContent='核对固定提交中的来源文件 ↗';article.append(link);}
+      }
+      const actions=document.createElement('div');actions.className='bio-actions';
+      const revise=document.createElement('button');revise.type='button';revise.textContent='基于此版修订';
+      revise.onclick=()=>extraForm('biography',item.id,bio);actions.append(revise);
+      if(bio.status!=='withdrawn'){
+        const withdraw=document.createElement('button');withdraw.type='button';withdraw.className='danger';withdraw.textContent='撤下此版';
+        withdraw.onclick=async()=>{
+          if(!confirm(`确认撤下小传 #${bio.id}？此操作独立于修订，新版仍须审核。`))return;
+          try{await write(`/materials/${bio.material_id}`,'DELETE');notify('旧版已撤下');await refreshAuthorBiographies(item.id);await load();}
+          catch(error){dialogError(error);}
+        };actions.append(withdraw);
+      }
+      article.append(actions);holder.append(article);
+    }
+  }
+  async function refreshAuthorBiographies(authorId){
+    const data=await api(`/authors/${authorId}`);
+    renderBiographyVersions(data);
   }
   function authorForm(item=null) {
     editor(item?'编辑作者':'新建作者',
       field('姓名','canonical_name',item?.canonical_name,{required:true})+
       field('朝代','dynasty',item?.dynasty||'tang',{select:[['tang','唐'],['song','宋'],['other','其他']]})+
-      field('身份状态','identity_status',item?.identity_status||'unverified',{select:[['unverified','未核验'],['verified','已核验'],['archived','已归档']]})+
+      field('人物身份核对状态','identity_status',item?.identity_status||'unverified',{select:[['unverified','待考证'],['verified','已核对'],['archived','已归档']],help:'待考证表示资料由源数据导入，尚未人工确认是否为同一历史人物。'})+
       ['birth_year_min','birth_year_max','death_year_min','death_year_max'].map((key,i)=>field(['生年起','生年止','卒年起','卒年止'][i],key,item?.[key]??'',{type:'number'})).join(''),
       async raw=>{for(const key of ['birth_year_min','birth_year_max','death_year_min','death_year_max'])raw[key]=raw[key]?Number(raw[key]):null;
         await write(item?`/authors/${item.id}`:'/authors',item?'PUT':'POST',raw);},
-      item?`<button type="button" class="danger" id="archive-author">归档作者</button>`:'');
-    if(item) $('#archive-author').onclick=async()=>{if(!confirm('归档作者记录？作品署名仍会保留。'))return;try{await write(`/authors/${item.id}`,'DELETE');closeEditor(true);await load();}catch(err){notify(err.message,true);}};
+      item?item.identity_status==='archived'
+        ?'<button type="button" class="restore-action" id="restore-author">恢复人物资料</button>'
+        :'<button type="button" class="danger" id="archive-author">归档人物资料</button>':'');
+    if(item){
+      const section=document.createElement('section');section.id='author-biographies';section.className='author-biographies';
+      $('#edit-form .actions').before(section);
+      renderBiographyVersions(item);
+    }
+    if(item?.identity_status==='archived') $('#restore-author').onclick=async()=>{
+      if(!confirm('恢复人物资料后身份状态为“待考证”，原始作品署名不变。确定恢复？'))return;
+      try{await write(`/authors/${item.id}/restore`,'POST');closeEditor(true);await load();}catch(err){dialogError(err);}
+    };
+    else if(item) $('#archive-author').onclick=async()=>{
+      if(!confirm('归档后人物资料和小传从查阅页隐藏，不再允许新作品关联；原始署名与历史资料仍保留。确定归档？'))return;
+      try{await write(`/authors/${item.id}`,'DELETE');closeEditor(true);await load();}catch(err){dialogError(err);}
+    };
   }
   function sourceForm(item=null) {
     editor(item?'编辑来源':'新建来源',field('来源键','key',item?.key,{required:true})+
@@ -175,12 +248,12 @@
     document.querySelectorAll('#edit-form input, #edit-form select').forEach(input=>input.oninput=()=>input.classList.remove('invalid'));
     if(material.kind!=='original') $('#withdraw-material').onclick=async()=>{if(!confirm('确认撤下此材料？'))return;try{await write(`/materials/${material.id}`,'DELETE');closeEditor(true);await load();}catch(err){dialogError(err);}};
   }
-  function extraForm(kind, ownerId) {
+  function extraForm(kind, ownerId, sourceBiography=null) {
     let title,markup,body;
-    if(kind==='biography') {title='新增作者小传';markup=field('简介正文','body','',{textarea:true,required:true})+field('摘要','summary','',{textarea:true})+field('来源 ID（可选）','source_id','',{type:'number'});body=x=>({body:x.body,summary:x.summary||null,source_id:x.source_id?Number(x.source_id):null});}
+    if(kind==='biography') {title=sourceBiography?`修订小传 #${sourceBiography.id}`:'新增作者小传';markup=field('简介正文','body',sourceBiography?.body||'',{textarea:true,required:true})+field('摘要','summary',sourceBiography?.summary||'',{textarea:true})+field('新内容来源 ID（可选）','source_id','',{type:'number',help:'留空表示诗卷人工校订。导入原文的来源保持原样，不自动继承转载许可。'});body=x=>({body:x.body,summary:x.summary||null,source_id:x.source_id?Number(x.source_id):null});}
     if(kind==='commentary') {title='新增作品赏析';markup=field('标题','title')+field('评论者','commentator_name')+field('赏析正文','body','',{textarea:true,required:true})+field('来源 ID（可选）','source_id','',{type:'number'});body=x=>({body:x.body,title:x.title||null,commentator_name:x.commentator_name||null,source_id:x.source_id?Number(x.source_id):null});}
     if(kind==='translation') {title='新增作品译文';markup=field('语言代码','language_tag','en',{required:true})+field('译者','translator_name')+field('译文（每行一块）','blocks','',{textarea:true,required:true})+field('来源 ID（可选）','source_id','',{type:'number'});body=x=>({language_tag:x.language_tag,translator_name:x.translator_name||null,blocks:x.blocks.split('\n').filter(Boolean),source_id:x.source_id?Number(x.source_id):null});}
-    editor(title,markup,async raw=>{await write(kind==='biography'?`/authors/${ownerId}/biographies`:`/works/${ownerId}/${kind==='commentary'?'commentaries':'translations'}`,'POST',body(raw));});
+    editor(title,markup,async raw=>{await write(kind==='biography'?`/authors/${ownerId}/biographies${sourceBiography?`/${sourceBiography.id}/revisions`:''}`:`/works/${ownerId}/${kind==='commentary'?'commentaries':'translations'}`,'POST',body(raw));});
   }
 
   function workDateForm(workId, record=null) {
@@ -222,9 +295,50 @@
         source_id:raw.source_id?Number(raw.source_id):null,tokens:JSON.parse(raw.tokens)}));
   }
   function attributionForm(item) {
-    editor(`署名消歧：${item.original_name}`,`<p>来源：${esc(item.source_path)} · 第 ${item.source_index} 条<br>当前人物 ID：${esc(item.author_id||'尚未关联')}</p>`+
-      field('目标规范人物 ID（清空则解除关联）','author_id',item.author_id||'',{type:'number'}),
-      raw=>api(`/attributions/${item.id}?${new URLSearchParams(raw)}`,{method:'PUT'}));
+    const linked=item.linked_author_name?`${item.linked_author_name}（${item.linked_author_dynasty||'朝代未详'}）`:'尚未关联';
+    const source=`${item.collection} · 第 ${item.source_index+1} 条`;
+    const biography=item.raw_biography||item.raw_short_biography||'来源中暂无生平描述，请额外核对。';
+    editor(`核对署名 · ${item.original_name}`,
+      `<div class="attribution-intro"><p><strong>原始署名：</strong>${esc(item.original_name)}</p><p><strong>资料集：</strong>${esc(source)}</p><p><strong>当前关联：</strong>${esc(linked)}</p></div>`+
+      `<details class="audit-details"><summary>查看原始来源与生平资料</summary><p>文件：${esc(item.source_path)}</p><p>原始 ID：${esc(item.original_id||'无')}</p><pre>${esc(biography)}</pre></details>`+
+      `<div class="candidate-search"><label for="candidate-keyword">寻找已存在的作者人物</label><div><input id="candidate-keyword" type="search" value="${esc(item.original_name)}" maxlength="80" placeholder="输入姓名查找人物"><button type="button" id="candidate-search-button">查找作者</button></div><small>姓名相同或繁简相似不代表同一人。请核对原始资料与候选人物生平后再关联。</small></div><div id="candidate-results" role="status" aria-live="polite"></div>`,
+      async()=>{},item.author_id?'<button type="button" class="danger" id="unlink-author">解除人物关联</button>':'');
+    // 人物主键只用于内部提交；不允许管理员凭数字盲填或修改主键。
+    $('#edit-form .actions button[type="submit"]').remove();
+    $('#cancel-edit').textContent='返回列表';
+    const results=$('#candidate-results');
+    $('#candidate-search-button').onclick=async()=>{
+      const keyword=$('#candidate-keyword').value.trim();
+      if(!keyword){results.textContent='请输入作者姓名后查找。';return;}
+      results.textContent='正在查找候选人物…';
+      try{
+        const candidates=await api(`/authors?${new URLSearchParams({q:keyword,limit:'20'})}`);
+        results.replaceChildren();
+        if(!candidates.length){results.textContent='未找到已建立的人物。可先在“作者资料”中建立并核对人物。';return;}
+        for(const candidate of candidates){
+          const row=document.createElement('div');row.className='candidate-row';
+          const text=document.createElement('span');
+          text.textContent=`${candidate.name} · ${candidate.dynasty} · ${candidate.identity_status}`;
+          const button=document.createElement('button');button.type='button';button.textContent='核对并选择';
+          button.onclick=async()=>{
+            try{
+              const detail=await api(`/authors/${candidate.id}`);
+              const bio=detail.biographies?.[0]?.body?.slice(0,300)||'该人物暂无已录入的小传。';
+              if(!confirm(`原始署名：${item.original_name}\n资料集：${source}\n\n拟关联人物：${candidate.name}（${candidate.dynasty}）\n人物资料：${bio}\n\n确认考证为同一人并建立关联？`))return;
+              await api(`/attributions/${item.id}?${new URLSearchParams({author_id:String(candidate.id)})}`,{method:'PUT'});
+              closeEditor(true);notify(`已将“${item.original_name}”关联到“${candidate.name}”`);await load();
+            }catch(err){dialogError(err);}
+          };
+          row.append(text,button);results.append(row);
+        }
+      }catch(err){dialogError(err);}
+    };
+    $('#candidate-keyword').onkeydown=event=>{if(event.key==='Enter'){event.preventDefault();$('#candidate-search-button').click();}};
+    if(item.author_id)$('#unlink-author').onclick=async()=>{
+      if(!confirm(`确认解除“${item.original_name}”与“${linked}”的关联？原始资料仍会保留。`))return;
+      try{await api(`/attributions/${item.id}`,{method:'PUT'});closeEditor(true);notify('已解除人物关联');await load();}
+      catch(err){dialogError(err);}
+    };
   }
 
   function renderPagination(total) {
@@ -258,7 +372,15 @@
         $('#material-status').value=query||'staged';
         $('#material-status').onchange=()=>{query=$('#material-status').value;offset=0;load().catch(showError);};
       } else {
-        $('#controls').innerHTML=`<input id="filter" aria-label="筛选列表" placeholder="${view==='sources'?'按来源名称或来源键查找':'按作者或作品名称查找'}" value="${esc(query)}"><button id="apply-filter">查找</button>${query?'<button id="clear-filter" type="button">清除筛选</button>':''}${view==='works'||view==='authors'||view==='sources'?'<button type="button" id="new-record" class="new-record">＋ 新建</button>':''}`;
+        const archiveOptions=view==='works'
+          ? [['all','全部作品'],['normal','在库作品'],['archived','已归档作品']]
+          : view==='authors'
+            ? [['all','全部人物'],['normal','未归档人物'],['archived','已归档人物']]
+            : null;
+        const archiveSelect=archiveOptions?`<label class="status-filter archive-filter" for="archive-status">归档状态 <select id="archive-status">${archiveOptions.map(([value,label])=>`<option value="${value}" ${archiveFilters[view]===value?'selected':''}>${label}</option>`).join('')}</select></label>`:'';
+        $('#controls').innerHTML=`<input id="filter" aria-label="筛选列表" placeholder="${view==='sources'?'按来源名称或来源键查找':'按作者或作品名称查找'}" value="${esc(query)}"><button id="apply-filter">查找</button>${query?'<button id="clear-filter" type="button">清除筛选</button>':''}${archiveSelect}${view==='works'||view==='authors'||view==='sources'?'<button type="button" id="new-record" class="new-record">＋ 新建</button>':''}`;
+        const archiveStatus=$('#archive-status');
+        if(archiveStatus)archiveStatus.onchange=()=>{archiveFilters[view]=archiveStatus.value;offset=0;load().catch(showError);};
         const filter=$('#filter');
         const originalPlaceholder=filter.placeholder;
         const resetFilterValidation=()=>{
@@ -291,6 +413,7 @@
     const queryString=new URLSearchParams({limit:String(pageSize),offset:String(offset)});
     if(view==='materials')queryString.set('status',query||'staged');
     else if(view!=='audit')queryString.set('q',query);
+    if(view==='works'||view==='authors')queryString.set('status',archiveFilters[view]);
     const {items,total}=await api(`/${view}?${queryString}`,{withTotal:true});
     if(sequence!==loadSequence)return;
     clearTimeout(loadTimer);
@@ -303,8 +426,8 @@
     for(const row of items){
       const element=document.createElement('div');element.className='record';
       const main=document.createElement('div');const name=document.createElement('strong');
-      name.textContent=view==='works'?row.title:view==='authors'?row.name:view==='sources'?row.title:view==='materials'?`${row.display_title||materialLabels[row.kind]||row.kind}`:view==='attributions'?`${row.original_name} · #${row.id}`:`${row.action_label} · ${row.target_label}`;
-      const info=document.createElement('small');info.textContent=view==='works'?`${row.author} · ${row.genre} · 版本 ${row.version} · ${row.status}`:view==='authors'?`${row.dynasty} · ${row.identity_status}`:view==='sources'?row.key:view==='materials'?`${materialLabels[row.kind]||row.kind} · ${row.creator||'作者未详'} · ${row.source_title||'来源未详'} · #${row.id}`:view==='attributions'?`${row.match_status} · 人物 ID ${row.author_id||'未关联'} · ${row.source_path}`:`${new Date(row.created_at).toLocaleString('zh-CN',{dateStyle:'medium',timeStyle:'short'})} · 操作人：${row.actor}`;
+      name.textContent=view==='works'?row.title:view==='authors'?row.name:view==='sources'?row.title:view==='materials'?`${row.display_title||materialLabels[row.kind]||row.kind}`:view==='attributions'?row.original_name:`${row.action_label} · ${row.target_label}`;
+      const info=document.createElement('small');info.textContent=view==='works'?`${row.author} · ${genreLabels[row.genre]||row.genre} · 第 ${row.version} 版 · ${workStatusLabels[row.status]||row.status}`:view==='authors'?`${dynastyLabels[row.dynasty]||row.dynasty} · ${authorStatusLabels[row.identity_status]||row.identity_status}`:view==='sources'?row.key:view==='materials'?`${materialLabels[row.kind]||row.kind} · ${row.creator||'作者未详'} · ${row.source_title||'来源未详'} · #${row.id}`:view==='attributions'?`${row.collection} · ${row.identity_label}${row.linked_author_name?'：'+row.linked_author_name:''}`:`${new Date(row.created_at).toLocaleString('zh-CN',{dateStyle:'medium',timeStyle:'short'})} · 操作人：${row.actor}`;
       main.append(name,info);
       if(view==='audit'){
         const details=document.createElement('details');details.className='audit-details';
@@ -327,7 +450,7 @@
           if(view==='authors'){const item=await api(`/authors/${row.id}`);authorForm(item);const extra=document.createElement('button');extra.type='button';extra.textContent='新增小传';extra.onclick=()=>extraForm('biography',row.id);$('#edit-form .actions').append(extra);const event=document.createElement('button');event.type='button';event.textContent='新增生平事件';event.onclick=()=>eventForm(row.id);$('#edit-form .actions').append(event);const events=await api(`/authors/${row.id}/events`);for(const record of events){const b=document.createElement('button');b.type='button';b.textContent=`编辑事件 ${record.year_start}`;b.onclick=()=>eventForm(row.id,record);$('#edit-form .actions').append(b);}}
           if(view==='sources')sourceForm(row);
           if(view==='materials')reviewForm(await api(`/materials/${row.id}`));
-          if(view==='attributions')attributionForm(row);
+          if(view==='attributions')attributionForm(await api(`/attributions/${row.id}`));
         }catch(err){showError(err);}};element.append(btn);
       }
       root.append(element);

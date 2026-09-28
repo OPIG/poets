@@ -9,6 +9,7 @@ from sqlalchemy.engine import Engine
 from .catalog import CatalogRepository, FIELDS, GENRES, SearchIndexMissing
 from .db import engine
 from .site import register_site_routes
+from .admin import register_admin
 
 
 def create_app(db: Engine | None = None, mode: str | None = None, allow_test_client: bool = False) -> FastAPI:
@@ -58,6 +59,7 @@ def create_app(db: Engine | None = None, mode: str | None = None, allow_test_cli
         return item
 
     register_site_routes(app, catalog)
+    register_admin(app, database)
     return app
 
 

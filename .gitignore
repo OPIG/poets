@@ -6,3 +6,5 @@ __pycache__/
 import-report*.json
 archive/**/node_modules/
 archive/**/dist/
+
+.admin-initial-password

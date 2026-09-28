@@ -267,3 +267,41 @@ class WorkSearch(Base):
         Index("ix_work_search_title_trgm", "normalized_title", postgresql_using="gin", postgresql_ops={"normalized_title": "gin_trgm_ops"}),
         Index("ix_work_search_tags_trgm", "normalized_tags", postgresql_using="gin", postgresql_ops={"normalized_tags": "gin_trgm_ops"}),
     )
+
+
+class AdminAuditLog(Base):
+    """追加式后台操作记录；不保存令牌或完整权利证据正文。"""
+    __tablename__ = "admin_audit_logs"
+    id: Mapped[int] = pk()
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    actor: Mapped[str] = mapped_column(Text)
+    action: Mapped[str] = mapped_column(String(48))
+    entity_type: Mapped[str] = mapped_column(String(48))
+    entity_id: Mapped[int] = mapped_column(BigInteger)
+    summary: Mapped[dict[str, Any]] = mapped_column(JSONB, server_default=text("'{}'::jsonb"))
+    __table_args__ = (Index("ix_admin_audit_logs_created_at", "created_at"),)
+
+
+class AdminUser(Base):
+    """管理员身份；只保存 Argon2id 密码摘要，不保存明文。"""
+    __tablename__ = "admin_users"
+    id: Mapped[int] = pk()
+    username: Mapped[str] = mapped_column(String(80), unique=True)
+    password_hash: Mapped[str] = mapped_column(Text)
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
+    failed_attempts: Mapped[int] = mapped_column(Integer, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    password_changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AdminSession(Base):
+    """限时会话；数据库仅存 Cookie 摘要；CSRF 值可随登录会话恢复。"""
+    __tablename__ = "admin_sessions"
+    id: Mapped[int] = pk()
+    user_id: Mapped[int] = mapped_column(ForeignKey("admin_users.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    csrf_token: Mapped[str] = mapped_column(String(80))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

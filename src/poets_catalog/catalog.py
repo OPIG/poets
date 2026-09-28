@@ -112,15 +112,17 @@ class CatalogRepository:
             biography = None
             author_public_id = None
             if work.author_id is not None:
-                author_public_id = session.scalar(select(Author.public_id).where(Author.id == work.author_id))
-                bio_stmt = (select(AuthorBiography.body)
-                            .join(Material, Material.id == AuthorBiography.material_id)
-                            .where(AuthorBiography.author_id == work.author_id))
-                if self.mode == "public":
-                    bio_stmt = bio_stmt.join(PUBLIC_MATERIALS, PUBLIC_MATERIALS.c.id == Material.id)
-                biography = session.scalar(bio_stmt.order_by(AuthorBiography.id).limit(1))
-                if biography and biography.strip() in {"--", "—", "-"}:
-                    biography = None
+                author = session.get(Author, work.author_id)
+                if author is not None and author.identity_status != "archived":
+                    author_public_id = author.public_id
+                    bio_stmt = (select(AuthorBiography.body)
+                                .join(Material, Material.id == AuthorBiography.material_id)
+                                .where(AuthorBiography.author_id == work.author_id))
+                    if self.mode == "public":
+                        bio_stmt = bio_stmt.join(PUBLIC_MATERIALS, PUBLIC_MATERIALS.c.id == Material.id)
+                    biography = session.scalar(bio_stmt.order_by(AuthorBiography.id).limit(1))
+                    if biography and biography.strip() in {"--", "—", "-"}:
+                        biography = None
             source = session.execute(select(Source.title, Source.url, Source.commit_sha)
                                      .where(Source.id == version.source_id)).one_or_none()
             source_url, file_url = github_source_links(source.url, source.commit_sha, version.source_path) if source else (None, None)

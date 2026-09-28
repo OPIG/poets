@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>诗卷 · 内容管理</title>
+  <link rel="stylesheet" href="/admin/static/admin.css?v=11">
+  <script src="/admin/static/admin.js?v=11" defer></script>
+</head>
+<body>
+<header class="topbar"><a href="/" class="brand">诗卷 <span>内容管理</span></a><small>仅供授权编辑与审核</small></header>
+<main>
+  <section id="login" class="login-stage" aria-labelledby="login-title">
+    <div class="login-landscape" aria-hidden="true">
+      <span class="login-landscape-line"></span>
+      <span class="login-sun"></span>
+      <span class="login-mountain login-mountain-back"></span>
+      <span class="login-mountain login-mountain-front"></span>
+      <span class="login-landscape-seal">诗<br>卷</span>
+    </div>
+    <div class="login-intro">
+      <span class="login-kicker">EDITORIAL · 诗卷工作台</span>
+      <h1 id="login-title">以一卷诗心，<br><em>守千年文脉。</em></h1>
+      <p>让每一处校订都有迹可循，<br>让每一段诗意得以妥善珍藏。</p>
+      <span class="login-intro-foot">诗卷 · 中华诗词典藏</span>
+    </div>
+    <div class="login-panel-wrap">
+      <div class="login-panel panel">
+        <div class="login-panel-heading"><span class="login-panel-mark" aria-hidden="true">诗</span><span class="login-panel-eyebrow">WELCOME BACK</span></div>
+        <h2>重新展卷</h2>
+        <p class="login-subtitle">以管理员身份登录，继续整理诗词。</p>
+        <form id="login-form">
+          <label for="username">管理员账号<input type="text" id="username" required autocomplete="username" placeholder="请输入管理员账号"></label>
+          <label for="password">密码<input type="password" id="password" required autocomplete="current-password" placeholder="请输入登录密码"></label>
+          <button type="submit">进入工作台 <span aria-hidden="true">→</span></button>
+        </form>
+        <p class="login-session-hint">会话有效期 8 小时 · 离开时请主动退出</p>
+      </div>
+    </div>
+  </section>
+  <div id="workspace" hidden>
+    <aside class="sidebar"><h2>工作台</h2><nav aria-label="后台导航">
+      <button data-view="works" class="active">作品管理</button>
+      <button data-view="authors">作者资料</button>
+      <button data-view="attributions">署名消歧</button>
+      <button data-view="materials">内容审核</button>
+      <button data-view="sources">来源登记</button>
+      <button data-view="audit">操作记录</button>
+    </nav><button id="logout" class="logout">退出后台</button></aside>
+    <section class="content">
+      <div class="content-heading"><div><p class="eyebrow">EDITORIAL CONSOLE</p><h1 id="view-title">作品管理</h1></div><span id="stats"></span></div>
+      <div id="notice" role="status" aria-live="polite"></div>
+      <div id="controls" class="toolbar"></div>
+      <div id="records" class="panel" role="region" aria-label="管理记录列表" tabindex="0"></div>
+      <nav id="pagination" class="pagination" aria-label="列表分页" hidden></nav>
+    </section>
+  </div>
+  <dialog id="logout-confirm" class="confirm-dialog" aria-labelledby="logout-confirm-title" aria-describedby="logout-confirm-description">
+    <div class="confirm-ornament" aria-hidden="true">卷</div>
+    <h2 id="logout-confirm-title">暂别诗卷？</h2>
+    <p id="logout-confirm-description">确认退出后，本次管理会话将结束；再次进入需重新登录。</p>
+    <div class="confirm-actions"><button type="button" id="cancel-logout">继续留在这里</button><button type="button" id="confirm-logout" class="primary">确认退出</button></div>
+  </dialog>
+  <dialog id="editor" class="editor-dialog" aria-labelledby="editor-title">
+    <div id="editor-content" class="editor panel"></div>
+  </dialog>
+</main>
+</body>
+</html>

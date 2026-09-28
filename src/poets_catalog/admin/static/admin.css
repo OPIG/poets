@@ -1,0 +1,148 @@
+:root{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;color:#263c30;background:#f6f7f3;font-synthesis:none}*{box-sizing:border-box}body{margin:0}button,input,textarea,select{font:inherit}button{cursor:pointer}a{color:inherit}a:hover{color:#246146}.topbar{height:74px;padding:0 35px;background:#224b3b;color:white;display:flex;align-items:center;justify-content:space-between}.brand{text-decoration:none;font-family:"Songti SC",serif;font-size:24px;letter-spacing:.12em}.brand span{font:12px sans-serif;letter-spacing:.1em;color:#bcd0c0;margin-left:15px}.topbar small{color:#bcd0c0}.login{max-width:480px;margin:11vh auto;padding:35px}.login h1{font-family:"Songti SC",serif;font-size:31px}.login p{color:#718474;line-height:1.8}.login form{display:flex;gap:10px;align-items:end}.login label{flex:1}.panel{background:#fff;border:1px solid #e0e8df;border-radius:3px;box-shadow:0 12px 32px #254b3b0a}.login input{margin-top:8px;width:100%}input,textarea,select{padding:10px 12px;border:1px solid #d0ded2;border-radius:3px;background:#fff;outline:none;color:#243f30}input:focus,textarea:focus,select:focus{border-color:#477b5a;box-shadow:0 0 0 2px #d8eadb}textarea{min-height:120px;resize:vertical}button{border:1px solid #cdded0;background:#fff;padding:10px 15px;color:#28533a;border-radius:3px}button:hover{background:#eaf3eb}button.primary,.login button{background:#28523c;color:white;border-color:#28523c}button.primary:hover,.login button:hover{background:#153d29}.danger{color:#a0443c;border-color:#edd0cc}.danger:hover{background:#fff1ee}#workspace{display:flex;min-height:calc(100vh - 74px)}.sidebar{width:230px;flex:none;background:#eaf0e9;padding:30px 18px;border-right:1px solid #d7e2d7}.sidebar h2{font-size:13px;letter-spacing:.16em;margin:0 15px 27px;color:#67836b}.sidebar nav{display:grid;gap:6px}.sidebar button{border:0;background:transparent;text-align:left;padding:13px 15px}.sidebar button.active{background:#fff;color:#19432b;font-weight:600;border-left:3px solid #39835b}.logout{margin-top:30px!important;width:100%;color:#aa5448!important}.content{width:100%;max-width:1100px;padding:35px 40px;margin:0 auto}.content-heading{display:flex;align-items:end;justify-content:space-between;margin-bottom:23px}.content-heading h1{font-family:"Songti SC",serif;font-size:32px;font-weight:500;margin:5px 0;color:#244c38}.eyebrow{font-size:11px;letter-spacing:.16em;color:#9a876c;margin:0}.content-heading span{color:#6a846f;font-size:12px}.toolbar{display:flex;gap:9px;margin-bottom:15px}.toolbar input{flex:1;max-width:340px}.toolbar select{min-width:130px}#notice{min-height:0;margin-bottom:10px;color:#4d7657}#notice.error{color:#aa463b}.panel#records{padding:12px 20px}.record{padding:17px 2px;border-bottom:1px solid #edf0ec;display:flex;align-items:center;justify-content:space-between;gap:20px}.record:last-child{border:0}.record strong{font-size:16px;font-weight:600;color:#244b35}.record small{display:block;margin-top:6px;color:#788b79;line-height:1.5}.record button{flex:none}.pill{font-size:11px;background:#edf4ee;color:#54765b;border-radius:30px;padding:5px 9px;margin-right:8px}.editor{margin-top:22px;padding:25px}.editor h2{font-family:"Songti SC",serif;font-size:23px;font-weight:500;margin:0 0 20px}.editor form{display:grid;grid-template-columns:repeat(2,1fr);gap:15px}.editor label{display:grid;gap:7px;font-size:12px;color:#5a7460}.editor label.full{grid-column:1/-1}.editor input,.editor textarea,.editor select{width:100%}.editor .actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:6px}.editor pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;background:#f4f7f2;padding:15px;max-height:400px;overflow:auto}.editor details{margin:13px 0;padding:12px;border:1px solid #e5ebe3}.editor summary{cursor:pointer}#workspace[hidden],.editor[hidden],.login[hidden]{display:none}.empty{padding:30px;text-align:center;color:#899b89}@media(max-width:760px){.topbar{padding:0 17px}.topbar small{display:none}#workspace{display:block}.sidebar{width:100%;padding:12px;display:flex;align-items:center;gap:12px;overflow-x:auto}.sidebar h2{display:none}.sidebar nav{display:flex;gap:2px;white-space:nowrap}.sidebar button{padding:10px}.logout{margin:0!important;width:auto;white-space:nowrap}.content{padding:20px 15px}.toolbar{flex-wrap:wrap}.toolbar input{max-width:none}.record{align-items:start}.editor form{grid-template-columns:1fr}.login{margin:50px 16px;padding:23px}.login form{display:block}.login button{margin-top:14px;width:100%}}
+
+/* 编辑使用原生模态对话框：焦点被约束在表单内，背景不可误操作。 */
+.editor-dialog{width:min(760px,calc(100vw - 32px));max-height:min(88vh,900px);margin:auto;padding:0;border:0;border-radius:7px;background:transparent;box-shadow:0 28px 90px #14312355;color:#263c30}
+.editor-dialog::backdrop{background:#132c2188;backdrop-filter:blur(2px)}
+.editor-dialog .editor{margin:0;max-height:min(88vh,900px);overflow-y:auto;padding:0 27px 27px;box-shadow:none}
+.editor-header{position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:25px 0 17px;margin-bottom:6px;background:#fff;border-bottom:1px solid #e5ebe3}
+.editor-header h2{margin:0}
+.editor-header button{width:36px;height:36px;padding:0;border:0;font-size:27px;line-height:1;color:#67816b}
+.editor-header button:hover{background:#eff4ef}
+.editor-dialog .actions{position:sticky;bottom:-27px;background:#fff;padding:16px 0 21px;border-top:1px solid #e5ebe3}
+.editor-dialog:focus{outline:none}
+/* 分页紧跟列表；页码和跳转共用同一行，移动端自然折行。 */
+.pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-top:18px;padding:16px 20px;border:1px solid #e0e8df;border-radius:3px;background:#fff;color:#526c59;font-size:13px}
+.pagination[hidden]{display:none}
+.page-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.page-actions>span{white-space:nowrap}
+.page-actions button:disabled{cursor:not-allowed;opacity:.45;background:#f7f9f6}
+#page-jump{display:flex;align-items:center;gap:8px;margin-left:12px}
+#page-jump label,#page-jump span{white-space:nowrap}
+#page-number{width:76px;padding:9px;text-align:center}
+.status-filter{display:flex;align-items:center;gap:10px;font-size:13px;color:#526c59}
+@media(max-width:760px){.editor-dialog{width:calc(100vw - 20px);max-height:94vh}.editor-dialog .editor{max-height:94vh;padding:0 18px 18px}.editor-header{padding-top:18px}.pagination{padding:14px;align-items:flex-start}.page-actions{gap:8px}#page-jump{margin-left:0}}
+
+/* 工作区至少覆盖可见视口；短列表时白色记录区也填满剩余空间。 */
+html,body{min-height:100%}
+body>main{min-height:calc(100vh - 74px);min-height:calc(100dvh - 74px)}
+#workspace{min-height:calc(100vh - 74px);min-height:calc(100dvh - 74px);align-items:stretch}
+#workspace .content{display:flex;flex-direction:column;max-width:none;min-width:0;margin:0}
+#workspace .content #records{flex:1;min-height:240px}
+#workspace .content .pagination{flex:none}
+@media(max-width:760px){#workspace .content{min-height:calc(100dvh - 74px)}#workspace .content #records{min-height:260px}}
+
+/* 工作台采用固定视口：列表是唯一的纵向内容滚动区，分页常驻底部。 */
+body>main{height:calc(100vh - 74px);height:calc(100dvh - 74px);min-height:0;overflow:auto}
+#workspace{height:100%;min-height:0;overflow:hidden}
+#workspace .sidebar{min-height:0;overflow-y:auto}
+#workspace .content{height:100%;min-height:0;overflow:hidden}
+#workspace .content #records{flex:1 1 0;min-height:0;overflow-y:auto;overscroll-behavior:contain}
+#workspace .content .pagination{flex:0 0 auto}
+#workspace .content #records:focus-visible{outline:2px solid #477b5a;outline-offset:-2px}
+@media(max-width:760px){
+  #workspace{display:flex;flex-direction:column;height:100%;min-height:0}
+  #workspace .sidebar{flex:none;overflow-x:auto;overflow-y:hidden}
+  #workspace .content{flex:1 1 0;height:auto;min-height:0;overflow:hidden}
+  #workspace .content #records{min-height:0}
+  #workspace .content .pagination{max-height:33vh;overflow-y:auto}
+}
+
+/* 空检索只高亮输入框；重新聚焦时恢复默认提示和常规边框。 */
+.toolbar input.invalid,.toolbar input.invalid:focus{border-color:#c7473b;box-shadow:0 0 0 2px #c7473b21}
+.toolbar input.invalid::placeholder{color:#b6362d;opacity:1}
+
+/* 退出确认使用独立原生模态，取消/按 Escape 均保持当前会话。 */
+.confirm-dialog{width:min(430px,calc(100vw - 32px));padding:34px 38px;border:1px solid #dce9dd;border-radius:8px;background:#fffefa;color:#294735;text-align:center;box-shadow:0 24px 70px #17372840}
+.confirm-dialog::backdrop{background:#17372886;backdrop-filter:blur(2px)}
+.confirm-ornament{width:56px;height:56px;margin:0 auto 16px;border:1px solid #c7d8c7;border-radius:50%;display:grid;place-items:center;font:28px "Songti SC",serif;color:#567b61;background:#f1f5ee}
+.confirm-dialog h2{font:500 26px "Songti SC",serif;letter-spacing:.12em;margin:0 0 13px}
+.confirm-dialog p{font-size:13px;line-height:1.9;color:#667d6c;margin:0 0 24px}
+.confirm-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.confirm-actions button{min-width:128px}
+.confirm-actions button:disabled{opacity:.55;cursor:wait}
+
+/* 展卷加载动画只在较慢请求后出现，结果以淡入方式承接。 */
+.loading-scene{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 18px;text-align:center;color:#526e58;animation:scene-arrive .32s ease-out both}
+.loading-mark{width:80px;height:80px;position:relative;display:grid;place-items:center;margin-bottom:18px}
+.loading-ring{position:absolute;inset:0;border:1px solid #d9e8d9;border-radius:50%;animation:ink-breathe 2.8s ease-in-out infinite}
+.loading-ring::after{content:"";position:absolute;inset:8px;border:1px solid #bed4c1;border-radius:50%;opacity:.7}
+.loading-character{font:36px "Songti SC",serif;color:#587a62;animation:ink-rise 2.8s ease-in-out infinite}
+.loading-title{font:500 21px "Songti SC",serif;letter-spacing:.22em;margin:0 0 7px;color:#3f654c}
+.loading-caption{font-size:12px;letter-spacing:.16em;margin:0;color:#829587}
+.loading-rule{width:116px;height:1px;background:#e1eae0;margin-top:24px;overflow:hidden}
+.loading-rule span{display:block;width:38px;height:1px;background:#80a589;animation:ink-travel 2.3s ease-in-out infinite}
+#records.results-ready>.record,#records.results-ready>.empty{animation:scene-arrive .32s ease-out both}
+@keyframes scene-arrive{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ink-breathe{50%{transform:scale(1.08);opacity:.45}}
+@keyframes ink-rise{50%{transform:translateY(-3px);opacity:.72}}
+@keyframes ink-travel{0%{transform:translateX(-38px)}50%{transform:translateX(70px)}100%{transform:translateX(116px)}}
+@media(prefers-reduced-motion:reduce){.loading-scene,.loading-ring,.loading-character,.loading-rule span,#records.results-ready>.record,#records.results-ready>.empty{animation:none}}
+@media(max-width:760px){.confirm-dialog{padding:28px 20px}.confirm-actions button{flex:1;min-width:120px}}
+
+/* 登录页：宣纸留白、远山与暖金落日均为 CSS 绘制，不额外请求装饰图片。 */
+.login-stage{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,430px);align-items:center;gap:clamp(28px,5vw,90px);width:min(1160px,calc(100% - 80px));min-height:100%;margin:0 auto;padding:65px 0 85px}
+.login-stage[hidden]{display:none}
+.login-stage::before{content:"";position:absolute;z-index:-2;inset:0 -10vw;background:radial-gradient(ellipse at 22% 46%,#f2f6ed 0%,#f8faf6 38%,transparent 70%)}
+.login-intro{position:relative;z-index:1;padding:15px 0 75px}
+.login-kicker{display:inline-flex;align-items:center;gap:12px;font-size:11px;font-weight:600;letter-spacing:.23em;color:#748b74}
+.login-kicker::before{content:"";width:28px;height:1px;background:#a9bca9}
+.login-intro h1{font:500 clamp(38px,4.4vw,62px)/1.4 "Songti SC","Noto Serif CJK SC",serif;letter-spacing:.1em;color:#24483a;margin:28px 0 22px}
+.login-intro h1 em{font-style:normal;color:#b89b68}
+.login-intro>p{font-size:14px;line-height:2.15;letter-spacing:.08em;color:#657b69;margin:0}
+.login-intro-foot{display:inline-block;margin-top:115px;padding-top:15px;border-top:1px solid #cddacd;color:#8ba08c;font-size:11px;letter-spacing:.2em}
+.login-landscape{position:absolute;inset:auto 32% 0 -9%;height:47%;z-index:-1;overflow:hidden;opacity:.75;pointer-events:none}
+.login-landscape-line{position:absolute;width:65%;height:65%;left:16%;bottom:-38%;border:1px solid #c1d2bf;border-radius:50%}
+.login-sun{position:absolute;width:86px;height:86px;left:52%;top:6%;border-radius:50%;background:#e1c7a4;opacity:.7;box-shadow:0 0 38px #e6d3b9}
+.login-mountain{position:absolute;left:0;bottom:0;width:100%;height:66%;clip-path:polygon(0 83%,18% 59%,31% 73%,49% 26%,64% 66%,79% 42%,100% 75%,100% 100%,0 100%)}
+.login-mountain-back{background:#b5ccb5;opacity:.55;transform:translateY(-24px)}
+.login-mountain-front{background:#86ab91;opacity:.45;clip-path:polygon(0 82%,23% 71%,39% 83%,55% 59%,69% 74%,83% 43%,100% 70%,100% 100%,0 100%)}
+.login-landscape-seal{position:absolute;left:79%;bottom:30px;width:34px;height:47px;border:1px solid #bd8a71;text-align:center;padding-top:5px;font:15px/1.15 "Songti SC",serif;color:#b27e65}
+.login-panel-wrap{position:relative;z-index:2}
+.login-panel{padding:40px 40px 35px;border-color:#e3eae0;border-radius:5px;background:#fffefa;box-shadow:0 20px 55px #344b3618}
+.login-panel-heading{display:flex;justify-content:space-between;align-items:center}
+.login-panel-mark{width:40px;height:40px;display:grid;place-items:center;border:1px solid #bacdbd;color:#3e674c;font:22px "Songti SC",serif;position:relative}
+.login-panel-mark::after{content:"";position:absolute;inset:3px;border:1px solid #e0e9dd}
+.login-panel-eyebrow{font-size:10px;letter-spacing:.22em;color:#a78d6d}
+.login-panel h2{font:500 31px "Songti SC","Noto Serif CJK SC",serif;letter-spacing:.1em;color:#234736;margin:31px 0 8px}
+.login-subtitle{font-size:13px;color:#738675;margin:0 0 28px;line-height:1.8}
+.login-panel #login-form{display:grid;gap:19px}
+.login-panel #login-form label{display:grid;gap:9px;color:#4f6754;font-size:12px;font-weight:600;letter-spacing:.04em}
+.login-panel #login-form input{width:100%;height:48px;margin:0;padding:11px 14px;background:#fff;border:1px solid #d5e0d3;border-radius:3px;font-size:14px;font-weight:400;letter-spacing:0;color:#274633}
+.login-panel #login-form input::placeholder{color:#9cab9d}
+.login-panel #login-form input:focus{border-color:#578267;box-shadow:0 0 0 3px #dcebdd}
+.login-panel #login-form button{height:50px;margin-top:5px;display:flex;align-items:center;justify-content:center;gap:18px;background:#244b3d;border-color:#244b3d;color:#fff;font-size:14px;letter-spacing:.1em}
+.login-panel #login-form button:hover{background:#173b2d}
+.login-session-hint{margin:24px 0 0;padding-top:18px;border-top:1px solid #edf1eb;color:#859886;text-align:center;font-size:11px;letter-spacing:.04em}
+@media(max-width:860px){.login-stage{grid-template-columns:minmax(0,1fr) minmax(300px,390px);width:calc(100% - 48px);gap:24px}.login-panel{padding:32px 27px}.login-intro h1{font-size:40px}.login-landscape{height:37%}}
+@media(max-width:700px){body>main:has(.login-stage:not([hidden])){height:auto;min-height:calc(100dvh - 74px);overflow:auto}.login-stage{display:flex;flex-direction:column;align-items:stretch;gap:20px;width:calc(100% - 36px);min-height:calc(100dvh - 74px);padding:38px 0 46px}.login-intro{padding:0}.login-kicker{font-size:10px}.login-intro h1{font-size:37px;line-height:1.35;margin:18px 0 9px}.login-intro>p{font-size:12px;line-height:1.9}.login-intro>p br{display:none}.login-intro-foot{display:none}.login-landscape{inset:0 -15% auto 12%;height:360px;opacity:.3}.login-panel-wrap{width:100%;margin-top:8px}.login-panel{padding:27px 24px 24px}.login-panel h2{margin-top:20px;font-size:27px}.login-subtitle{margin-bottom:20px}.login-session-hint{margin-top:17px}}
+@media(prefers-reduced-motion:reduce){.login-stage *{scroll-behavior:auto}}
+
+/* 新建为次级操作：检索靠左，新建靠右；线框保持适当触达面积。 */
+.toolbar .new-record{margin-left:auto;min-height:42px;padding:10px 18px;border:1px solid #729a7e;background:transparent;color:#285a3c;font-weight:600;white-space:nowrap}
+.toolbar .new-record:hover{background:#e8f1e9;border-color:#416f50}
+.toolbar .new-record:focus-visible{outline:2px solid #285a3c;outline-offset:2px}
+@media(max-width:760px){.toolbar .new-record{margin-left:auto;min-height:44px}}
+
+/* 审核项优先呈现作品与作者；材料类型和来源作为辅助元数据。 */
+.review-context{grid-column:1/-1;display:flex;align-items:baseline;flex-wrap:wrap;gap:8px 16px;padding:13px 16px;background:#f4f7f2;border:1px solid #e1eae0;color:#58715e;font-size:12px}
+.review-context strong{font:500 18px "Songti SC",serif;color:#285139;overflow-wrap:anywhere}
+.review-kind{padding:4px 8px;border:1px solid #d4e3d4;background:#fff;color:#3d6950;white-space:nowrap}
+.review-body{grid-column:1/-1;margin:0!important}
+.review-body pre{font-family:"Songti SC",serif;line-height:1.7}
+#editor-error[hidden]{display:none}
+#editor-error{margin:14px 0;padding:11px 13px;border:1px solid #e8c9c5;border-left:3px solid #b7483e;background:#fff4f2;color:#953c34;font-size:13px;line-height:1.6;white-space:pre-wrap}
+.editor input.invalid,.editor input.invalid:focus{border-color:#b7483e;box-shadow:0 0 0 2px #f4dedb}
+@media(max-width:760px){.review-context{align-items:flex-start;flex-direction:column;gap:7px}}
+
+/* 审计列表先展示人能理解的动作与对象，技术字段按需展开。 */
+.audit-details{margin-top:9px;color:#57755f;font-size:12px}
+.audit-details summary{cursor:pointer;width:max-content}
+.audit-details pre{max-width:min(670px,78vw);white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f8f4;border:1px solid #e4ebe2;padding:10px;color:#566b59;line-height:1.5}
+
+/* 审核字段按决定动态显示必填标记，解释许可范围而非让编辑猜测字段含义。 */
+.required-mark{margin-left:4px;color:#b63e35;font-weight:700}
+.required-mark[hidden]{display:none}
+.field-help{display:block;color:#607866;font-size:11px;font-weight:400;line-height:1.6;letter-spacing:0;margin-top:2px;max-width:100%}
+.editor label select.invalid,.editor label select.invalid:focus{border-color:#b7483e;box-shadow:0 0 0 2px #f4dedb}
+
+.field-caption{display:inline-flex;align-items:center;gap:2px}

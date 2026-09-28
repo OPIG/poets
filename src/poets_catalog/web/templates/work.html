@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block main %}
+<article class="reading page-width" itemscope itemtype="https://schema.org/CreativeWork">
+  <nav class="reading-breadcrumb" aria-label="面包屑"><a href="/">诗卷</a><span>/</span><a href="{{ search_url('', 'all', item.genre) }}">{{ category }}</a><span>/</span><span>{{ item.title }}</span></nav>
+  {% if mode == 'preview' %}<div class="preview-note"><span class="preview-icon">!</span><div><strong>本地数据预览</strong><span>原始资料尚未完成公开权利审核。</span></div></div>{% endif %}
+  <div class="reading-sheet">
+    <span class="drawer-genre">{{ category }}</span>
+    <h1 itemprop="name">{{ item.title }}</h1>
+    <p class="reading-author" itemprop="author" itemscope itemtype="https://schema.org/Person"><span itemprop="name">{{ item.author }}</span></p>
+    {% if item.prologue %}<p class="poem-prologue">{{ item.prologue }}</p>{% endif %}
+    <div class="poem-body" itemprop="text">{% for paragraph in item.paragraphs %}<p>{{ paragraph }}</p>{% else %}<p class="missing-body">原始资料暂未收录正文。</p>{% endfor %}</div>
+    {% if item.tags %}<section class="drawer-tags" aria-label="作品标签"><h2 class="drawer-section-label">作品标签</h2><div>{% for tag in item.tags %}<a href="{{ search_url(tag, 'tag') }}">{{ tag }}</a>{% endfor %}</div></section>{% endif %}
+    {% if item.author_bio %}<section class="author-profile"><h2 class="drawer-section-label">作者小传</h2><p>{{ item.author_bio }}</p></section>{% endif %}
+    <div class="source-note"><span>数据来源</span>{% if item.source_url %}<a class="source-reference" href="{{ item.source_url }}" target="_blank" rel="noopener noreferrer" title="查看原始数据项目（外部网站）">{{ item.source or 'chinese-poetry' }} ↗</a>{% else %}<strong>{{ item.source or 'chinese-poetry' }}</strong>{% endif %}</div>
+  </div>
+  <a class="back-to-catalog" href="/">← 返回诗词长廊</a>
+</article>
+{% endblock %}

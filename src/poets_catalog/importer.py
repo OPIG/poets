@@ -23,7 +23,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from .db import engine
 from .models import (
     Author, AuthorAttribution, AuthorBiography, Material, Source, Work,
-    WorkParagraph, WorkVersion,
+    WorkParagraph, WorkVersion, WorkSearch,
 )
 
 LOG = logging.getLogger(__name__)
@@ -114,8 +114,7 @@ def insert_authors(conn, root: Path, path: Path, dataset: str, dynasty: str, sou
         if not isinstance(row, dict) or not isinstance(row.get("name"), str) or not row["name"].strip():
             raise ValueError(f"Invalid author at {relative}:{i}")
 
-    # Source records determine repeatability. Person IDs are opaque and never
-    # derived from names, their script variants, or row positions.
+    # 用来源记录确定重跑位置，人物公开 ID 不含姓名、繁简写法或数组序号。
     history = conn.execute(select(AuthorAttribution.source_id, AuthorAttribution.source_index,
         AuthorAttribution.original_id, AuthorAttribution.original_name,
         AuthorAttribution.raw_biography, AuthorAttribution.author_id)
@@ -301,6 +300,12 @@ def import_file(conn, root, path, genre, authors, source_id, issues, warnings):
     version_ids = dict(returned.all())
     paragraphs = [dict(work_version_id=version_ids[p["work_id"]], paragraph_index=i, body=body)
         for p in changed for i,body in enumerate(p["row"]["paragraphs"])]
+    search_rows = [dict(work_version_id=version_ids[p["work_id"]],
+        normalized_author=normalize(p["row"]["author"]),
+        normalized_title=normalize(p["row"].get("title") or p["row"].get("rhythmic") or ""),
+        normalized_tags=normalize(" ".join(str(t) for t in (p["row"].get("tags") or []))))
+        for p in changed]
+    conn.execute(insert(WorkSearch).values(search_rows))
     if paragraphs:
         # 分段写入，避免少数长篇作品让单条 SQL 的参数数量过大。
         for start in range(0, len(paragraphs), 1000):
@@ -346,6 +351,35 @@ def load(root: Path, datasets: list[str], revision: str, dry_run=False):
         db.dispose()
 
 
+def reindex(batch_size: int = 500):
+    """为迁移前已存在的版本补齐作者、诗题和标签索引，可重复运行。"""
+    db = engine()
+    added = 0
+    last_id = 0
+    try:
+        while True:
+            with db.begin() as conn:
+                rows = conn.execute(select(WorkVersion.id, WorkVersion.raw_payload)
+                    .outerjoin(WorkSearch, WorkSearch.work_version_id == WorkVersion.id)
+                    .where(WorkVersion.id > last_id, WorkSearch.work_version_id.is_(None))
+                    .order_by(WorkVersion.id).limit(batch_size)).all()
+                if not rows:
+                    break
+                values = [dict(work_version_id=vid,
+                    normalized_author=normalize(raw.get("author") or ""),
+                    normalized_title=normalize(raw.get("title") or raw.get("rhythmic") or ""),
+                    normalized_tags=normalize(" ".join(str(t) for t in (raw.get("tags") or []))))
+                    for vid, raw in rows]
+                conn.execute(insert(WorkSearch).values(values).on_conflict_do_nothing(
+                    index_elements=[WorkSearch.work_version_id]))
+                added += len(values)
+                last_id = rows[-1][0]
+                LOG.info("search index: through version=%d, indexed=%d", last_id, added)
+        return {"indexed": added}
+    finally:
+        db.dispose()
+
+
 def verify(root: Path, datasets: list[str]):
     """比较源数组数量与已入库作品，并报告暂存与权利审核数量。"""
     expected = report_scan(root, datasets)
@@ -354,12 +388,14 @@ def verify(root: Path, datasets: list[str]):
         with db.connect() as conn:
             actual = dict(conn.execute(select(Work.genre, func.count()).group_by(Work.genre)).all())
             versions = conn.scalar(select(func.count()).select_from(WorkVersion))
+            indexed = conn.scalar(select(func.count()).select_from(WorkSearch))
             private = conn.scalar(select(func.count()).select_from(Material).where(Material.workflow_status == "staged"))
             rights = conn.scalar(text("SELECT count(*) FROM rights_reviews WHERE decision = 'approved'"))
         comparison = {name: {"expected": expected[name]["work_records"], "actual": actual.get(SPECS[name][2], 0)}
             for name in datasets}
-        return {"datasets": comparison, "versions": versions, "staged_materials": private,
-                "approved_rights_reviews": rights, "matches": all(v["expected"] == v["actual"] for v in comparison.values())}
+        return {"datasets": comparison, "versions": versions, "indexed_versions": indexed, "staged_materials": private,
+                "approved_rights_reviews": rights, "matches": (all(v["expected"] == v["actual"] for v in comparison.values())
+                            and indexed == versions)}
     finally:
         db.dispose()
 
@@ -367,7 +403,7 @@ def verify(root: Path, datasets: list[str]):
 def main():
     """解析命令行，输出机器可读 JSON；问题或核对失败时返回非零退出码。"""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["scan", "load", "verify"])
+    parser.add_argument("command", choices=["scan", "load", "reindex", "verify"])
     parser.add_argument("--source-dir", type=Path, default=Path(__file__).resolve().parents[3] / "chinese-poetry")
     parser.add_argument("--datasets", nargs="+", choices=list(SPECS), default=list(SPECS))
     parser.add_argument("--revision", help="Override Git commit for a non-Git fixture checkout")
@@ -382,6 +418,8 @@ def main():
         result = report_scan(root, args.datasets)
     elif args.command == "load":
         result = load(root, args.datasets, source_revision(root, args.revision))
+    elif args.command == "reindex":
+        result = reindex()
     else:
         result = verify(root, args.datasets)
     serialized = json.dumps(result, ensure_ascii=False, indent=2)

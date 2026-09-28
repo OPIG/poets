@@ -1,4 +1,4 @@
-"""Distinguish canonical CI authors from source positions.
+"""区分宋词人物身份与来源文件位置。
 
 Revision ID: 7f924a0d7a61
 Revises: 4a1d56a72e38
@@ -13,7 +13,7 @@ depends_on = None
 
 def upgrade() -> None:
     """修复早期把宋词作者文件位置误当人物身份的历史数据：只移动未公开且无人工关联的歧义条目。原署名和简介仍保留在 author_attributions。"""
-    # A repeated name without a source ID is a source attribution, not a person.
+    # 没有来源 ID 的重复姓名属于署名记录，不能直接代表一个确定人物。
     op.execute("""
         CREATE TEMP TABLE ci_ambiguous_author_ids ON COMMIT DROP AS
         SELECT DISTINCT a.author_id AS id
@@ -25,7 +25,7 @@ def upgrade() -> None:
         ) d USING (source_id, original_name)
         WHERE a.source_path = '宋词/author.song.json' AND a.author_id IS NOT NULL
     """)
-    # Refuse to unlink manually enriched or approved records.
+    # 存在人工补充或审核内容时拒绝自动解绑，避免破坏已核对关系。
     op.execute("""
         DO $$ BEGIN
           IF EXISTS (SELECT 1 FROM works WHERE author_id IN (SELECT id FROM ci_ambiguous_author_ids))
@@ -53,8 +53,8 @@ def upgrade() -> None:
     op.execute("DELETE FROM author_biographies WHERE author_id IN (SELECT id FROM ci_ambiguous_author_ids)")
     op.execute("DELETE FROM materials WHERE id IN (SELECT id FROM ci_orphan_bio_materials)")
     op.execute("DELETE FROM authors WHERE id IN (SELECT id FROM ci_ambiguous_author_ids)")
-    # For unambiguous profiles the name is a stable source-local identity; the
-    # file path and offset remain exclusively in author_attributions.
+    # 仅对无歧义记录暂以姓名建立旧版来源内定位；后续迁移为公开 UUID。
+    # 文件路径与序号始终只保存在来源署名表中。
     op.execute("""
         UPDATE authors a SET identity_key = 'author:ci:' || a.canonical_name
         WHERE a.identity_key LIKE 'author:ci:宋词/author.song.json:%'
@@ -62,5 +62,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Historical source positions are deliberately not restored as person IDs.
+    # 历史文件位置有意不恢复为人物身份。
     pass

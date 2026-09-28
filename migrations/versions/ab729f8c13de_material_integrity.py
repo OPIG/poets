@@ -1,4 +1,4 @@
-"""Enforce the material discriminator and centralize public eligibility.
+"""校验内容材料类型并集中定义公开准入条件。
 
 Revision ID: ab729f8c13de
 Revises: f38a6d192ca0

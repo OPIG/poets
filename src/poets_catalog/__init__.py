@@ -1,1 +1,1 @@
-"""Poetry catalog and importer."""
+"""诗词目录、导入和服务端阅读站。"""

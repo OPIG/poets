@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block main %}
+{% if not q and field == 'all' and genre == 'all' and page == 1 %}
+<section class="hero" id="explore">
+  <div class="hero-ornament hero-ornament-one" aria-hidden="true">山</div>
+  <div class="hero-ornament hero-ornament-two" aria-hidden="true">水</div>
+  <div class="page-width hero-inner">
+    <div class="hero-copy">
+      <div class="eyebrow"><span class="eyebrow-line"></span> 万卷诗书，一处可寻</div>
+      <h1>于千年诗行间，<br><em>遇见</em>此刻心声。</h1>
+      <p class="hero-subtitle">从唐诗的旷达、宋诗的深思，到宋词的婉转。<br>循一个名字、一首诗，或一种意境，开启你的阅读。</p>
+      <a class="hero-cta" href="#results">走进诗词长廊 <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="hero-art" aria-hidden="true"><div class="art-circle circle-back"></div><div class="art-circle circle-front"></div><div class="art-ridge ridge-one"></div><div class="art-ridge ridge-two"></div><div class="art-ridge ridge-three"></div><div class="art-sun"></div><div class="art-poem">江山如画<br>一时多少豪杰</div><div class="art-seal">诗<br>卷</div></div>
+  </div>
+  <div class="page-width hero-bottom"><span><span class="small-diamond"></span> 汇集 {{ '{:,}'.format(metadata.total) }} 篇诗词作品</span><a href="#results">向下探索 ↓</a></div>
+</section>
+{% endif %}
+
+{% if mode == 'preview' %}<div class="preview-note page-width"><span class="preview-icon">!</span><div><strong>本地数据预览</strong><span>原始资料尚未逐条完成权利审核，仅供本机整理与校对，请勿公开部署。</span></div></div>{% endif %}
+<section class="browse page-width" id="results">
+  <div class="section-heading"><div><span class="section-kicker">DISCOVER · 探索</span><h2>诗词长廊</h2><p>让每一次翻阅，都成为与古人的一场相遇。</p></div><div class="heading-aside">诗中有天地<br>字里见山河</div></div>
+  {# GET 表单保证无 JavaScript 的搜索、历史记录与结果链接都可用。 #}
+  <div class="search-panel" aria-label="诗词检索条件">
+    <div class="search-panel-heading"><strong>检索诗词</strong><span>关键词、范围与类别共同筛选结果</span></div>
+    <form class="search-box" action="/search" method="get" role="search">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input aria-label="检索关键词" type="search" name="q" value="{{ q }}" maxlength="80" placeholder="输入作者、诗词名或标签…">
+      <label class="field-filter" for="search-field"><span>范围</span>
+        <select id="search-field" name="field">{% for key, label in search_fields %}<option value="{{ key }}" {% if field == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+      </label>
+      <input type="hidden" name="genre" value="{{ genre }}">
+      <button type="submit">检索 <span aria-hidden="true">→</span></button>
+    </form>
+    <div class="hero-hints"><span>试试搜索</span><a href="{{ search_url('李白', 'author', genre) }}">李白</a><a href="{{ search_url('苏轼', 'author', genre) }}">苏轼</a><a href="{{ search_url('李清照', 'author', genre) }}">李清照</a><a href="{{ search_url('明月', 'all', genre) }}">明月</a></div>
+    <nav class="genre-tabs" aria-label="诗词类别">
+      <a href="{{ search_url(q, field, 'all') }}" {% if genre == 'all' %}aria-current="page" class="active"{% endif %}>全部作品</a>
+      {% for key, label in genres.items() %}<a href="{{ search_url(q, field, key) }}" {% if genre == key %}aria-current="page" class="active"{% endif %}>{{ label }}</a>{% endfor %}
+    </nav>
+  </div>
+
+  <div class="result-toolbar"><div><strong>{{ heading }}</strong><span>{{ current_field }} · {{ current_genre }} · 共找到 {{ '{:,}'.format(results.total) }} 篇作品</span></div>{% if q or field != 'all' or genre != 'all' %}<a class="clear-search" href="/">× 清除全部条件</a>{% endif %}</div>
+  {% if results['items'] %}
+  <div class="poem-grid">
+    {% for item in results['items'] %}
+    <a class="poem-card" href="/works/{{ item.id }}">
+      <div class="card-top"><span class="card-genre">{{ genres[item.genre] }}</span><span class="card-index">{{ '%03d' | format((page - 1) * results.size + loop.index) }}</span></div>
+      <h3>{{ item.title }}</h3><div class="card-author"><span class="card-author-line"></span>{{ item.author }}</div>
+      <p class="card-excerpt">{{ item.excerpt or '此作暂未收录正文。' }}</p>
+      <div class="card-footer"><div class="card-tags">{% if item.tags %}<small>标签</small>{% endif %}{% for tag in item.tags[:2] %}<span>{{ tag }}</span>{% endfor %}</div><span class="read-more">阅读全文 →</span></div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}<div class="state-panel"><div class="empty-glyph">寻</div><strong>诗卷中暂未寻得此作</strong><p>不妨换个作者、诗题或标签，再试一次。</p><a href="/">浏览全部作品 →</a></div>{% endif %}
+  {% set pages = (results.total + results.size - 1) // results.size %}
+  {% if pages > 1 %}<nav class="pagination" aria-label="结果分页">
+    {% if page > 1 %}<a href="{{ search_url(q, field, genre, page - 1) }}">‹ 上一页</a>{% else %}<span class="disabled">‹ 上一页</span>{% endif %}
+    <span>第 <strong>{{ page }}</strong> / {{ '{:,}'.format(pages) }} 页</span>
+    {% if page < pages %}<a href="{{ search_url(q, field, genre, page + 1) }}">下一页 ›</a>{% endif %}
+  </nav>{% endif %}
+</section>
+<section class="closing" id="about"><div class="page-width closing-inner"><div><span class="section-kicker">ABOUT THE COLLECTION</span><h2>让古典，不止于书页。</h2><p>以结构化的方式保存诗词原貌，以更轻盈的方式走近千年文心。<br>每一篇作品都保留来源线索，等待审慎校对与继续完善。</p></div><div class="closing-calligraphy" aria-hidden="true">读<br>诗</div></div></section>
+{% endblock %}

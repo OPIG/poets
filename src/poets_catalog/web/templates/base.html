@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f3ec">
+  <title>{{ title }}</title>
+  <meta name="description" content="{{ description }}">
+  <meta name="robots" content="{{ robots }}">
+  {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
+  <link rel="stylesheet" href="/static/css/site.css">
+  {% if json_ld %}<script type="application/ld+json">{{ json_ld | tojson }}</script>{% endif %}
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar page-width">
+      <a class="brand" href="/">
+        <span class="brand-mark">诗</span><span class="brand-copy"><strong>诗卷</strong><small>中华诗词典藏</small></span>
+      </a>
+      <nav class="top-nav" aria-label="主导航">
+        <a href="/#results">探索诗词</a><a href="/#about">关于诗卷</a>
+        <span class="nav-divider"></span><span class="nav-badge"><span class="status-dot"></span>{{ '公开馆藏' if mode == 'public' else '本地预览' }}</span>
+      </nav>
+      <details class="mobile-nav"><summary aria-label="展开导航">☰</summary><nav aria-label="移动导航"><a href="/#results">探索诗词</a><a href="/#about">关于诗卷</a></nav></details>
+    </header>
+    <main>{% block main %}{% endblock %}</main>
+    <footer class="footer page-width">
+      <div class="footer-brand"><span class="brand-mark">诗</span><span>诗卷 · 中华诗词典藏</span></div>
+      <span>在文字里，与山河重逢。</span>
+      <span>数据来源：chinese-poetry · 原文待核</span>
+    </footer>
+  </div>
+</body>
+</html>

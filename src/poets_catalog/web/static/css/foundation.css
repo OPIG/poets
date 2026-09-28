@@ -1,0 +1,131 @@
+/* 基础排版、设计 token 与站点导航。 */
+:root {
+  /* 统一色阶和阅读字号，避免在模板中堆叠 utility 类。 */
+  --ink: #244b3d;
+  --muted: #607665;
+  --paper: #f8f7f3;
+  --line: #dce6db;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  color: #263a34;
+  background: #f8f7f3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  min-width: 320px;
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+.page-width {
+  width: min(1200px, calc(100% - 64px));
+  margin: 0 auto;
+}
+.site-shell {
+  overflow: hidden;
+}
+.topbar {
+  height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.brand,
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.brand-mark {
+  width: 45px;
+  height: 45px;
+  border: 1px solid #46695d;
+  display: grid;
+  place-items: center;
+  color: #25493d;
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 25px;
+  line-height: 1;
+  position: relative;
+}
+.brand-mark:after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #c9d4ca;
+}
+.brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.brand-copy strong {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 23px;
+  letter-spacing: 0.18em;
+  font-weight: 600;
+}
+.brand-copy small {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  color: #83928a;
+}
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 42px;
+  font-size: 13px;
+  color: #586a60;
+}
+.top-nav a:hover {
+  color: #1b4e3d;
+}
+.nav-divider {
+  height: 18px;
+  width: 1px;
+  background: #dce2db;
+  margin-left: 2px;
+  margin-right: -16px;
+}
+.nav-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d9e1da;
+  border-radius: 100px;
+  padding: 9px 15px;
+  color: #52705e;
+  font-size: 12px;
+  background: #fffdf9;
+}
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #b69459;
+}
+.mobile-menu {
+  display: none;
+  border: 0;
+  background: none;
+  color: #25493d;
+}

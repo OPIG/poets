@@ -1,6 +1,6 @@
 # Database audit — 2026-09-28
 
-Scope: all 15 catalog tables and the two guarded views in `poets_dev`, compared against the importer and the source JSON. This is a structural/data-quality audit, **not** a copyright clearance.
+Scope: all 16 catalog tables and the two guarded views in `poets_dev`, compared against the importer and the source JSON. This is a structural/data-quality audit, **not** a copyright clearance.
 
 | Table | Finding |
 | --- | --- |
@@ -18,6 +18,7 @@ Scope: all 15 catalog tables and the two guarded views in `poets_dev`, compared 
 | `translation_blocks` | Empty. Alignment trigger rejects paragraph references from another version and enforces whole-work vs paragraph modes; ordering is unique per edition. |
 | `commentaries` | Empty. Material type and optional paragraph-version alignment are checked. Critic attribution and source rights still require human review. |
 | `pinyin_sets` | Empty. Each set is bound to the exact text hash; JSON token positions still require application-level validation against the paragraph text before publication. |
+| `work_searches` | Normalized author, title/词牌 and tags for all 332,908 versions; the index can be rebuilt with `poets-import reindex`. This lookup table is not a public API and contains no copyright approval. |
 | `rights_reviews` | Empty. Approval requires legal basis, permitted scope and evidence URI; a current review is unique per material. It is not a substitute for legal judgment. |
 
 `public_materials` filters published, current, unexpired and hash-matching approvals; `public_work_versions` further requires the current original material and exposes an opaque work UUID. Both currently return zero rows. A future public app should use a restricted read-only DB role with access to guarded views, **not** grant it access to raw tables. Biography/translation/commentary views must additionally check their referenced work version's publication policy.

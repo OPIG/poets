@@ -4,3 +4,5 @@ __pycache__/
 *.egg-info/
 .env
 import-report*.json
+archive/**/node_modules/
+archive/**/dist/

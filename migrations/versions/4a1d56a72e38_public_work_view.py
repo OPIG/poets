@@ -1,4 +1,4 @@
-"""Guarded public work view.
+"""只展示已通过版权审核的作品视图。
 
 Revision ID: 4a1d56a72e38
 Revises: ba1c8e96da0d

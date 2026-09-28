@@ -1,4 +1,4 @@
-"""Keep versioned source text and alignment parents stable.
+"""保证原文版本不可变且扩展内容与版本对齐。
 
 Revision ID: f38a6d192ca0
 Revises: e2821c72f01d

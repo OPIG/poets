@@ -1,0 +1,273 @@
+/* 作品阅读、出处、底部区块。 */
+.closing {
+  background: #e8eee6;
+  border-top: 1px solid #dfe8db;
+  overflow: hidden;
+}
+.closing-inner {
+  min-height: 270px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+.closing h2 {
+  font-size: 32px;
+  margin: 17px 0;
+}
+.closing p {
+  font-size: 13px;
+  color: #7d917e;
+  line-height: 2;
+  letter-spacing: 0.05em;
+}
+.closing-calligraphy {
+  font-family: "Songti SC", serif;
+  font-size: 110px;
+  line-height: 0.95;
+  color: #bfd0be;
+  position: absolute;
+  right: 90px;
+  top: 45px;
+  letter-spacing: -0.1em;
+  transform: rotate(-11deg);
+  opacity: 0.72;
+}
+.footer {
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #93a095;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.footer-brand {
+  color: #496553;
+  font-size: 13px;
+}
+.footer-brand .brand-mark {
+  width: 29px;
+  height: 29px;
+  font-size: 16px;
+}
+.footer-brand .brand-mark:after {
+  inset: 2px;
+}
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #10291f86;
+  z-index: 50;
+  display: flex;
+  justify-content: flex-end;
+  animation: fade 0.22s ease;
+}
+.detail-drawer {
+  height: 100%;
+  width: min(610px, 100%);
+  background: #fafaf6;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -12px 0 45px #10251a29;
+  animation: slide 0.3s ease;
+}
+.drawer-top,
+.drawer-bottom {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 40px;
+  border-bottom: 1px solid #e7ebe3;
+  color: #8b9c8d;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+}
+.drawer-top button {
+  border: 0;
+  background: none;
+  color: #4c6d56;
+  padding: 4px;
+}
+.drawer-content {
+  overflow-y: auto;
+  padding: 53px 56px 50px;
+  flex: 1;
+}
+.drawer-genre {
+  font-size: 12px;
+  color: #a98e64;
+  letter-spacing: 0.26em;
+}
+.drawer-content h2 {
+  font-family: "Songti SC", serif;
+  font-size: 37px;
+  color: #254b38;
+  letter-spacing: 0.07em;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 18px 0 13px;
+}
+.drawer-author {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  color: #759078;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+}
+.drawer-author-rule {
+  width: 40px;
+  height: 1px;
+  background: #bdcbbd;
+}
+.poem-prologue {
+  font-family: "Songti SC", serif;
+  color: #7e9180;
+  font-size: 14px;
+  line-height: 2;
+  border-left: 2px solid #d7e1d3;
+  padding-left: 20px;
+  margin-top: 39px;
+}
+.poem-body {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  color: #385947;
+  font-size: 19px;
+  line-height: 2.15;
+  letter-spacing: 0.09em;
+  margin: 46px 0 40px;
+}
+.poem-body p {
+  margin: 0 0 12px;
+}
+.poem-body .missing-body {
+  font-size: 15px;
+  color: #9fac9f;
+}
+.drawer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.drawer-tags button {
+  padding: 7px 12px;
+  background: #edf2eb;
+  border: 0;
+  color: #5a785d;
+  font-size: 12px;
+}
+.drawer-tags button:hover {
+  background: #dce9da;
+}
+.author-profile {
+  border-top: 1px solid #dfe8dd;
+  margin-top: 45px;
+  padding-top: 35px;
+}
+.drawer-section-label {
+  color: #718b73;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+.author-profile p {
+  font-family: "Songti SC", serif;
+  font-size: 14px;
+  line-height: 2;
+  color: #697d6b;
+  white-space: pre-wrap;
+}
+.source-note {
+  margin-top: 40px;
+  border-top: 1px solid #e7ebe3;
+  padding-top: 23px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: #a0ada1;
+  font-size: 11px;
+}
+.source-note strong {
+  font-weight: 500;
+  color: #6a816d;
+}
+.source-note small {
+  word-break: break-all;
+}
+.drawer-bottom {
+  border-top: 1px solid #e7ebe3;
+  border-bottom: 0;
+  padding: 17px 40px;
+}
+.drawer-bottom button {
+  border: 0;
+  background: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #356349;
+  font-size: 12px;
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes slide {
+  from {
+    transform: translateX(30px);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 独立可索引的作品阅读页；复用原阅读抽屉的字体与段落视觉。 */
+.reading {
+  max-width: 900px;
+  padding: 28px 0 90px;
+}
+.reading-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #617564;
+  font-size: 12px;
+  margin-bottom: 28px;
+}
+.reading-breadcrumb a:hover { color: var(--ink); text-decoration: underline; }
+.reading-breadcrumb span:last-child { color: var(--ink); }
+.reading .preview-note { margin: 0 0 22px; }
+.reading-sheet {
+  padding: 66px min(8vw, 100px);
+  border: 1px solid #e2e8df;
+  background: #fffefa;
+  box-shadow: 0 17px 50px #3050400a;
+}
+.reading-sheet h1 {
+  margin: 18px 0 14px;
+  font: 500 clamp(28px, 4vw, 44px)/1.35 "Songti SC", "Noto Serif CJK SC", serif;
+  letter-spacing: .06em;
+  color: var(--ink);
+}
+.reading-author { font-size: 14px; color: var(--muted); margin: 0; }
+.reading-sheet .poem-body { margin: 48px 0 44px; }
+.reading-sheet .poem-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.reading-sheet .drawer-tags a {
+  display: inline-block;
+  padding: 7px 12px;
+  background: #edf2eb;
+  color: #476d52;
+  font-size: 12px;
+}
+.reading-sheet .drawer-tags a:hover { background: #dce9da; }
+.reading-sheet .drawer-section-label { display: block; font-weight: 500; }
+.back-to-catalog { display: inline-block; color: var(--ink); font-size: 13px; margin-top: 26px; }
+.back-to-catalog:hover { text-decoration: underline; }

@@ -1,0 +1,356 @@
+/* 检索面板、结果卡片与分页。 */
+.browse {
+  padding-top: 84px;
+  padding-bottom: 95px;
+  scroll-margin-top: 28px;
+}
+.section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 39px;
+}
+.section-kicker {
+  color: #a48b66;
+  font-size: 10px;
+}
+.section-heading h2,
+.closing h2 {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-weight: 500;
+  letter-spacing: 0.13em;
+  font-size: 38px;
+  margin: 14px 0 9px;
+  color: #254439;
+}
+.section-heading p {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: #8a988c;
+  margin: 0;
+}
+.heading-aside {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #9bae9b;
+  font-family: "Songti SC", serif;
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.15em;
+}
+.filters {
+  border-top: 1px solid #e2e7dd;
+  border-bottom: 1px solid #e2e7dd;
+  min-height: 73px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.genre-tabs {
+  display: flex;
+  align-items: center;
+  gap: 37px;
+  height: 73px;
+}
+.genre-tabs button {
+  position: relative;
+  border: 0;
+  background: none;
+  color: #849187;
+  padding: 0;
+  height: 100%;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.genre-tabs button span {
+  margin-left: 7px;
+  font-size: 10px;
+  color: #aab5a9;
+}
+.genre-tabs button.active {
+  color: var(--ink);
+  font-weight: 600;
+}
+.genre-tabs button.active:after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: #2c624a;
+  left: 0;
+  right: 0;
+}
+.field-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #8d9b90;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.field-filter select {
+  background: #fff;
+  border: 1px solid #dde4da;
+  border-radius: 2px;
+  color: #456151;
+  padding: 10px 27px 10px 13px;
+  outline: none;
+  cursor: pointer;
+}
+.result-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 32px 0 21px;
+}
+.result-toolbar > div {
+  display: flex;
+  align-items: baseline;
+  gap: 15px;
+}
+.result-toolbar strong {
+  font-family: "Songti SC", serif;
+  color: #2d4c3e;
+  font-size: 18px;
+  font-weight: 600;
+}
+.result-toolbar span {
+  color: #9aa79c;
+  font-size: 12px;
+}
+.clear-search {
+  border: 0;
+  background: none;
+  color: #839587;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
+.clear-search:hover {
+  color: #254b3d;
+}
+.poem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.poem-card {
+  background: #fff;
+  border: 1px solid #e8ebe4;
+  text-align: left;
+  padding: 29px 29px 22px;
+  min-height: 267px;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform 0.25s,
+    box-shadow 0.25s,
+    border-color 0.25s;
+  color: inherit;
+}
+.poem-card:hover,
+.poem-card:focus-visible {
+  transform: translateY(-4px);
+  border-color: #c6d8c6;
+  box-shadow: 0 14px 30px #34524012;
+  outline: 0;
+}
+.card-top,
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-genre {
+  color: #718d76;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+.card-index {
+  font-family: Georgia, serif;
+  color: #c0c8bd;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+.poem-card h3 {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 23px;
+  color: #2b4d3d;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 19px 0 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.card-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b49b70;
+  font-size: 12px;
+  letter-spacing: 0.13em;
+}
+.card-author-line {
+  width: 16px;
+  height: 1px;
+  background: #c4af87;
+}
+.card-excerpt {
+  font-family: "Songti SC", "Noto Serif CJK SC", serif;
+  font-size: 15px;
+  line-height: 1.85;
+  color: #778b7d;
+  margin: 22px 0 24px;
+  letter-spacing: 0.02em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.card-footer {
+  margin-top: auto;
+  padding-top: 15px;
+  border-top: 1px solid #f0f2ed;
+  min-height: 32px;
+}
+.card-tags {
+  display: flex;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+}
+.card-tags span {
+  font-size: 10px;
+  color: #8a9a89;
+  background: #f3f6f1;
+  padding: 4px 7px;
+  white-space: nowrap;
+}
+.read-more {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #557865;
+  font-size: 11px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.poem-card:hover .read-more {
+  color: var(--ink);
+}
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  margin-top: 48px;
+  color: #7c8f80;
+  font-size: 12px;
+}
+.pagination button {
+  border: 1px solid #d9e3d8;
+  background: #fff;
+  padding: 11px 17px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #42614e;
+}
+.pagination button:not(:disabled):hover {
+  background: var(--ink);
+  color: white;
+}
+.pagination button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+.pagination strong {
+  color: #315641;
+}
+.state-panel {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #7e917e;
+  background: #fff;
+  border: 1px solid #e8ebe4;
+  text-align: center;
+}
+.state-panel strong {
+  font-family: "Songti SC", serif;
+  font-size: 21px;
+  color: #365a43;
+  margin-top: 12px;
+}
+.state-panel p {
+  font-size: 13px;
+  color: #96a397;
+}
+.state-panel button {
+  border: 0;
+  background: none;
+  color: #527862;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.empty-glyph {
+  font-family: "Songti SC", serif;
+  font-size: 45px;
+  color: #a6baa6;
+}
+.error-panel {
+  color: #a37856;
+}
+.skeleton {
+  pointer-events: none;
+  gap: 17px;
+}
+.skeleton div {
+  height: 14px;
+  background: linear-gradient(90deg, #eef1ec, #f8faf7, #eef1ec);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+  border-radius: 2px;
+}
+.skeleton div:nth-child(1) {
+  width: 28%;
+}
+.skeleton div:nth-child(2) {
+  width: 64%;
+  height: 24px;
+  margin-top: 15px;
+}
+.skeleton div:nth-child(3) {
+  width: 34%;
+}
+.skeleton div:nth-child(4) {
+  width: 88%;
+  margin-top: 24px;
+}
+@keyframes shimmer {
+  to {
+    background-position-x: -200%;
+  }
+}
+
+/* 服务端页面用链接提交 GET 参数；卡片本身也是可抓取的作品 URL。 */
+.poem-card { text-decoration: none; }
+.hero-hints a { padding: 5px 11px; background: #fff; border: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.hero-hints a:hover { color: var(--ink); border-color: #aecab1; }
+.genre-tabs a { display: inline-flex; align-items: center; height: 100%; position: relative; color: #566d5b; font-size: 13px; }
+.genre-tabs a.active { color: var(--ink); font-weight: 600; }
+.genre-tabs a.active::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 2px; background: #2c624a; }
+.pagination a,.pagination .disabled { border: 1px solid var(--line); padding: 11px 17px; color: var(--ink); }
+.pagination a:hover { background: var(--ink); color: white; }
+.pagination .disabled { opacity: .42; }
+.state-panel a { color: var(--ink); font-size: 13px; margin-top: 8px; }
+.search-icon { font-size: 25px; line-height: 1; }

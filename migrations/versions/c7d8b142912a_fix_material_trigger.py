@@ -1,4 +1,4 @@
-"""Avoid accessing fields absent from other editorial tables.
+"""修正内容触发器访问不存在字段的问题。
 
 Revision ID: c7d8b142912a
 Revises: ab729f8c13de

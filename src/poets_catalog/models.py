@@ -1,4 +1,4 @@
-"""诗词目录的 15 张关系表：来源、人物、版本正文、扩展内容与权利审核。
+"""诗词目录的关系表：来源、人物、版本正文、扩展内容与权利审核。
 
 表结构由 Alembic 迁移维护；这里的模型用于导入脚本和后续服务端查询。
 原始文字与现代简介先入私有暂存，不因源仓库采用 MIT 就自动公开。
@@ -253,3 +253,17 @@ class RightsReview(Base):
     is_current: Mapped[bool] = mapped_column(Boolean, server_default=text("true"))
     reason: Mapped[str | None] = mapped_column(Text)
     __table_args__ = (Index("uq_current_rights_review", "material_id", unique=True, postgresql_where=text("is_current")),)
+
+
+class WorkSearch(Base):
+    """独立的归一化索引，避免修改庞大的不可变原文版本行。"""
+    __tablename__ = "work_searches"
+    work_version_id: Mapped[int] = mapped_column(ForeignKey("work_versions.id"), primary_key=True)
+    normalized_author: Mapped[str] = mapped_column(Text)
+    normalized_title: Mapped[str] = mapped_column(Text)
+    normalized_tags: Mapped[str] = mapped_column(Text)
+    __table_args__ = (
+        Index("ix_work_search_author_trgm", "normalized_author", postgresql_using="gin", postgresql_ops={"normalized_author": "gin_trgm_ops"}),
+        Index("ix_work_search_title_trgm", "normalized_title", postgresql_using="gin", postgresql_ops={"normalized_title": "gin_trgm_ops"}),
+        Index("ix_work_search_tags_trgm", "normalized_tags", postgresql_using="gin", postgresql_ops={"normalized_tags": "gin_trgm_ops"}),
+    )

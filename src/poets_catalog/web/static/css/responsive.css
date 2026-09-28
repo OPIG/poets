@@ -1,0 +1,526 @@
+/* 平板与移动适配、对比度修正。 */
+@media (max-width: 1050px) {
+  .hero-art {
+    right: -150px;
+    opacity: 0.55;
+  }
+  .hero-copy {
+    width: 78%;
+  }
+  .poem-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .genre-tabs {
+    gap: 19px;
+  }
+}
+@media (max-width: 700px) {
+  .page-width {
+    width: min(100% - 36px, 1200px);
+  }
+  .topbar {
+    height: 70px;
+  }
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    font-size: 21px;
+  }
+  .brand-copy strong {
+    font-size: 20px;
+  }
+  .brand-copy small {
+    font-size: 9px;
+  }
+  .mobile-menu {
+    display: block;
+  }
+  .top-nav {
+    display: none;
+    position: absolute;
+    top: 62px;
+    left: 18px;
+    right: 18px;
+    z-index: 20;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 15px 30px #24433322;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 18px;
+  }
+  .top-nav.open {
+    display: flex;
+  }
+  .nav-divider {
+    display: none;
+  }
+  .hero {
+    min-height: 510px;
+  }
+  .hero-inner {
+    height: 452px;
+  }
+  .hero-copy {
+    width: 100%;
+    padding: 0;
+  }
+  .hero-art {
+    right: -260px;
+    opacity: 0.19;
+  }
+  .hero h1 {
+    font-size: 40px;
+    letter-spacing: 0.04em;
+    margin: 23px 0 15px;
+  }
+  .hero-subtitle {
+    font-size: 12px;
+    line-height: 1.9;
+  }
+  .hero-subtitle br {
+    display: none;
+  }
+  .search-box {
+    height: 61px;
+    padding-left: 15px;
+  }
+  .search-box input {
+    padding: 0 9px;
+    font-size: 12px;
+  }
+  .search-box button {
+    height: 49px;
+    padding: 0 14px;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .search-icon {
+    width: 17px;
+  }
+  .hero-hints {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .hero-hints button {
+    font-size: 11px;
+    padding: 4px 7px;
+  }
+  .hero-bottom {
+    height: 57px;
+  }
+  .hero-bottom a {
+    font-size: 0;
+  }
+  .hero-bottom svg {
+    width: 19px;
+  }
+  .preview-note {
+    margin-top: 18px;
+    padding: 11px 12px;
+  }
+  .preview-note div {
+    display: block;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .preview-note strong {
+    margin-right: 8px;
+  }
+  .browse {
+    padding-top: 62px;
+    padding-bottom: 65px;
+  }
+  .section-heading {
+    margin-bottom: 27px;
+  }
+  .section-heading h2 {
+    font-size: 31px;
+  }
+  .heading-aside {
+    display: none;
+  }
+  .filters {
+    display: block;
+    padding-top: 4px;
+  }
+  .genre-tabs {
+    overflow-x: auto;
+    width: 100%;
+    gap: 21px;
+    height: 57px;
+  }
+  .genre-tabs button {
+    height: 57px;
+    font-size: 12px;
+  }
+  .genre-tabs button span {
+    font-size: 9px;
+  }
+  .field-filter {
+    justify-content: flex-end;
+    padding: 12px 0;
+  }
+  .result-toolbar {
+    margin: 25px 0 18px;
+    gap: 15px;
+  }
+  .result-toolbar > div {
+    display: block;
+  }
+  .result-toolbar strong {
+    font-size: 16px;
+  }
+  .result-toolbar span {
+    display: block;
+    margin-top: 7px;
+  }
+  .poem-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .poem-card {
+    min-height: 229px;
+    padding: 23px;
+  }
+  .poem-card h3 {
+    font-size: 22px;
+  }
+  .card-excerpt {
+    margin: 16px 0 18px;
+  }
+  .pagination {
+    gap: 12px;
+  }
+  .pagination button {
+    padding: 9px 10px;
+    font-size: 11px;
+  }
+  .closing-inner {
+    min-height: 265px;
+  }
+  .closing h2 {
+    font-size: 27px;
+  }
+  .closing p {
+    font-size: 12px;
+  }
+  .closing-calligraphy {
+    right: 7px;
+    opacity: 0.2;
+  }
+  .footer {
+    height: auto;
+    padding-top: 28px;
+    padding-bottom: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 17px;
+  }
+  .drawer-top,
+  .drawer-bottom {
+    padding: 19px 23px;
+  }
+  .drawer-content {
+    padding: 40px 27px;
+  }
+  .drawer-content h2 {
+    font-size: 30px;
+  }
+  .poem-body {
+    font-size: 17px;
+    line-height: 2.1;
+  }
+  .drawer-bottom {
+    font-size: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 小字号辅助信息也保持足够对比度，避免淡色文本难以辨读。 */
+.brand-copy small {
+  color: #5c7262;
+}
+.section-kicker {
+  color: #806b49;
+}
+.section-heading p,
+.genre-tabs button,
+.field-filter,
+.result-toolbar span {
+  color: #5d7263;
+}
+.genre-tabs button span,
+.card-index,
+.card-tags span {
+  color: #637866;
+}
+.hero-hints,
+.hero-bottom,
+.card-excerpt,
+.closing p,
+.footer,
+.source-note {
+  color: var(--muted);
+}
+.card-author {
+  color: #866b43;
+}
+.drawer-genre {
+  color: #80633c;
+}
+
+.genre-tabs button span {
+  color: #405d47;
+}
+.card-genre {
+  color: #41684d;
+}
+.card-tags span {
+  color: #395a43;
+}
+.pagination > span {
+  color: #4e6954;
+}
+.closing .section-kicker {
+  color: #6f583a;
+}
+.closing p {
+  color: #4b6751;
+}
+/* 把三种联动条件组成一个连续的检索区域，而不是散落在首屏和列表两处。 */
+.hero-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 16px 23px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 13px;
+  letter-spacing: 0.09em;
+  transition: background 0.2s;
+}
+.hero-cta:hover {
+  background: #143a2d;
+}
+.search-panel {
+  padding: 26px 28px 0;
+  background: #eff3ed;
+  border: 1px solid var(--line);
+}
+.search-panel-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 17px;
+  margin-bottom: 16px;
+  color: #2d4c3e;
+}
+.search-panel-heading strong {
+  font-family: "Songti SC", serif;
+  font-size: 20px;
+  letter-spacing: 0.1em;
+}
+.search-panel-heading span {
+  color: #617764;
+  font-size: 12px;
+}
+.search-panel .search-box {
+  max-width: none;
+  width: 100%;
+  box-shadow: none;
+  border: 1px solid #d4e0d3;
+}
+.search-panel .hero-hints {
+  margin: 12px 0 16px;
+}
+.search-panel .hero-hints button {
+  background: #fff;
+}
+.search-panel .genre-tabs {
+  border-top: 1px solid #d5e2d4;
+  width: 100%;
+  gap: 35px;
+}
+.search-panel .genre-tabs button {
+  color: #566d5b;
+}
+.search-panel .genre-tabs button.active {
+  color: var(--ink);
+}
+.search-panel .genre-tabs button.active:after {
+  bottom: 0;
+}
+.search-box .field-filter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  border-left: 1px solid #dde5db;
+  color: #536d59;
+}
+.search-box .field-filter select {
+  border: 0;
+  background: transparent;
+  padding: 9px 22px 9px 3px;
+  max-width: 136px;
+  color: #254b3d;
+}
+.search-box .field-filter span {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.card-tags small {
+  font-size: 10px;
+  color: #47604a;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.drawer-tags {
+  display: block;
+}
+.drawer-tags > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 13px;
+}
+.source-note a {
+  color: #356247;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.source-note a:hover {
+  color: #163d2b;
+}
+.source-note small {
+  color: #677b6a;
+}
+@media (max-width: 700px) {
+  .hero {
+    min-height: 465px;
+  }
+  .hero-inner {
+    height: 407px;
+  }
+  .search-panel {
+    padding: 18px 14px 0;
+  }
+  .search-panel-heading {
+    display: block;
+  }
+  .search-panel-heading span {
+    display: block;
+    margin-top: 5px;
+    line-height: 1.6;
+  }
+  .search-panel .search-box {
+    height: auto;
+    min-height: 58px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    padding: 6px 6px 6px 13px;
+  }
+  .search-panel .search-box input {
+    min-height: 45px;
+    flex: 1 1 75%;
+    font-size: 12px;
+  }
+  .search-panel .search-icon {
+    flex: none;
+  }
+  .search-panel .field-filter {
+    order: 3;
+    width: 100%;
+    border-left: 0;
+    border-top: 1px solid #e5ece4;
+    padding: 7px 4px;
+    justify-content: flex-start;
+  }
+  .search-panel .field-filter select {
+    max-width: none;
+  }
+  .search-panel .search-box button {
+    margin-left: auto;
+  }
+  .search-panel .genre-tabs {
+    gap: 25px;
+  }
+  .search-panel .hero-hints {
+    margin: 10px 0 14px;
+  }
+  .result-toolbar span {
+    line-height: 1.6;
+  }
+}
+@media (max-width: 700px) {
+  .search-panel .search-box input {
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+  }
+  .search-panel .search-box button {
+    flex: none;
+  }
+  .search-panel .field-filter {
+    flex: 0 0 100%;
+  }
+}
+.search-panel-heading span,
+.search-panel .hero-hints > span {
+  color: #4b6650;
+}
+
+/* 来源是辅助信息：只呈现项目入口，不将内部文件定位作为阅读主操作。 */
+.source-note .source-reference {
+  align-self: flex-start;
+  color: #5b785f;
+  text-decoration: none;
+  border: 0;
+  border-radius: 3px;
+  padding: 4px 6px;
+  margin-left: -6px;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+.source-note .source-reference:hover,
+.source-note .source-reference:focus-visible {
+  color: var(--ink);
+  background: #eaf1e9;
+  text-decoration: none;
+  outline: 2px solid transparent;
+}
+.source-note .source-reference:focus-visible {
+  outline-color: #426d59;
+}
+@media (max-width: 700px) {
+  .reading { padding-top: 20px; padding-bottom: 50px; }
+  .reading-sheet { padding: 38px 25px; }
+  .reading-sheet .poem-body { font-size: 17px; line-height: 2.15; }
+  .genre-tabs a { white-space: nowrap; font-size: 12px; }
+  .search-panel .search-box input[type="search"] { min-width: 0; flex: 1 1 0; }
+}
+
+/* 无脚本移动导航：原生 details 能通过键盘和触屏展开。 */
+.mobile-nav { display: none; }
+@media (max-width: 700px) {
+  .mobile-nav { display: block; position: relative; z-index: 10; }
+  .mobile-nav summary { list-style: none; cursor: pointer; color: var(--ink); font-size: 22px; padding: 8px; }
+  .mobile-nav summary::-webkit-details-marker { display: none; }
+  .mobile-nav nav { position: absolute; right: 0; top: 43px; min-width: 160px; background: #fffefa; border: 1px solid var(--line); box-shadow: 0 10px 24px #24433322; display: grid; }
+  .mobile-nav nav a { padding: 12px 17px; color: var(--ink); font-size: 13px; }
+  .mobile-nav nav a:hover { background: #eff3ed; }
+}
+/* 辅助文案与装饰字在浅背景上保持足够对比度。 */
+.heading-aside { color: #4d6953; }
+.pagination .disabled { opacity: 1; color: #566d5a; background: #f4f6f2; }
+.closing-calligraphy { color: #537057; opacity: .9; }

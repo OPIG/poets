@@ -8,10 +8,16 @@ dependencies = [
   "alembic>=1.13,<2",
   "psycopg[binary]>=3.2,<4",
   "opencc-python-reimplemented>=0.1.7,<1",
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "jinja2>=3.1,<4",
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8,<10"]
+test = [
+    "httpx>=0.27,<1",
+    "pytest>=8,<10",
+]
 
 [project.scripts]
 poets-import = "poets_catalog.importer:main"

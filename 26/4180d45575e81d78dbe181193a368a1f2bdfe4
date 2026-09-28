@@ -1,0 +1,23 @@
+src/poets_catalog/importer.py
+  s_2d432355a480cc::t_6c64dfa6bf5d46 2-111,113-115,183-184,189,193-196,198,201,205-238,241-245,250-253,256,258,261-278,280-286,289-300,302-304,306-333,336-343,345-354,356-398
+src/poets_catalog/models.py
+  s_2d432355a480cc::t_6e94660f01319f 93
+migrations/versions/ba1c8e96da0d_initial_catalog_schema.py
+  s_2d432355a480cc::t_6e94660f01319f 18-91
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.45-trip",
+  "base_commit_sha": "264180d45575e81d78dbe181193a368a1f2bdfe4",
+  "prompts": {},
+  "sessions": {
+    "s_2d432355a480cc": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0e6d3-ddda-7132-ab33-6480ec9841d4",
+        "model": "gpt-6-sol-2026-09-22[1M]"
+      },
+      "human_author": "Atom Yuan <pgyuan@trip.com>"
+    }
+  }
+}

@@ -21,6 +21,7 @@ def test_search_fields_and_detail(monkeypatch):
             response = client.get("/api/works", params={"q": term, "field": field, "genre": "tang_poem"})
             assert response.status_code == 200
             assert response.json()["total"] >= 1
+            assert response.json()["size"] == 20
         first = client.get("/api/works", params={"q": "春日", "field": "title"}).json()["items"][0]
         detail = client.get(f"/api/works/{first['id']}").json()
         assert detail["paragraphs"] == ["春風吹柳。", "明月照人。"]

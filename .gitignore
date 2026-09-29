@@ -8,3 +8,5 @@ archive/**/node_modules/
 archive/**/dist/
 
 .admin-initial-password
+
+poets_dev.dump

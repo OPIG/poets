@@ -10,12 +10,12 @@ from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .catalog import CatalogRepository, FIELDS, GENRES, SearchIndexMissing
+from .catalog import CatalogRepository, DEFAULT_PAGE_SIZE, FIELDS, GENRES, SearchIndexMissing
 
 WEB_ROOT = Path(__file__).resolve().parent / "web"
 TEMPLATES = Environment(loader=FileSystemLoader(WEB_ROOT / "templates"),
                         autoescape=select_autoescape(["html", "xml"]))
-PAGE_SIZE = 12
+PAGE_SIZE = DEFAULT_PAGE_SIZE
 SITEMAP_SIZE = 10_000
 
 

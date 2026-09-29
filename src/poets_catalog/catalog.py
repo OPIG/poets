@@ -41,6 +41,10 @@ def github_source_links(url: str | None, revision: str | None, relative_path: st
     return repo, f"{repo}/blob/{quote(revision, safe='')}/{quote(relative_path, safe='/')}"
 
 
+# 阅读站及检索 API 的默认分页条数；显式传入 size 仍可按 API 限制调整。
+DEFAULT_PAGE_SIZE = 20
+
+
 class CatalogRepository:
     """仅提供只读查询；public 模式从已审核视图过滤，preview 模式供本机校对。"""
 
@@ -71,7 +75,7 @@ class CatalogRepository:
         return {"mode": self.mode, "counts": {key: counts.get(key, 0) for key in GENRES},
                 "total": sum(counts.values()), "indexed_versions": indexed, "versions": versions}
 
-    def search(self, q: str = "", field: str = "all", genre: str = "all", page: int = 1, size: int = 12):
+    def search(self, q: str = "", field: str = "all", genre: str = "all", page: int = 1, size: int = DEFAULT_PAGE_SIZE):
         """作者／标题／标签 OR 命中；类别 AND 筛选；原文不参与关键词检索。"""
         with Session(self.db) as session:
             if not session.scalar(select(func.count()).select_from(WorkSearch)):

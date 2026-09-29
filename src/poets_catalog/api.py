@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.engine import Engine
 
-from .catalog import CatalogRepository, FIELDS, GENRES, SearchIndexMissing
+from .catalog import CatalogRepository, DEFAULT_PAGE_SIZE, FIELDS, GENRES, SearchIndexMissing
 from .db import engine
 from .site import register_site_routes
 from .admin import register_admin
@@ -43,7 +43,7 @@ def create_app(db: Engine | None = None, mode: str | None = None, allow_test_cli
 
     @app.get("/api/works")
     def works(q: str = Query("", max_length=80), field: str = "all", genre: str = "all",
-              page: int = Query(1, ge=1, le=10000), size: int = Query(12, ge=1, le=30)):
+              page: int = Query(1, ge=1, le=10000), size: int = Query(DEFAULT_PAGE_SIZE, ge=1, le=30)):
         if field not in FIELDS or genre not in {*GENRES, "all"}:
             raise HTTPException(422, "Unsupported field or genre")
         try:

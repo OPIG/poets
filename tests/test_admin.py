@@ -539,3 +539,44 @@ def test_preview_prefers_approved_new_biography_over_staged_import(admin):
     assert client.delete(f'/admin/api/materials/{new["material_id"]}', headers=auth()).status_code == 200
     detail = CatalogRepository(conn, 'preview').detail(UUID(work['public_id']))
     assert detail['author_bio'] == '旧版待审核小传。'
+
+
+def test_work_editorial_sections_and_revisions(admin):
+    """已有赏析、译文、拼音和年代可读取并基于原版追加修订。"""
+    client, _ = admin
+    work = client.post('/admin/api/works', json={'genre':'tang_poem','author_name':'测试作者',
+        'title':'测试题', 'paragraphs':['明月。']}, headers=auth()).json()
+    ident = work['id']
+    commentary = client.post(f'/admin/api/works/{ident}/commentaries',
+        json={'title':'初稿','body':'初稿赏析。'},headers=auth()).json()
+    translation = client.post(f'/admin/api/works/{ident}/translations',
+        json={'language_tag':'en','blocks':['Moon.']},headers=auth()).json()
+    pinyin = client.post(f'/admin/api/works/{ident}/pinyin',json={'tokens':[
+        {'paragraph_index':0,'char_index':0,'character':'明','pinyin':'míng'}]},headers=auth()).json()
+    date = client.post(f'/admin/api/works/{ident}/dates',json={'year_start':700,'year_end':702,
+        'date_precision':'range','confidence':'low'},headers=auth()).json()
+    listing = client.get(f'/admin/api/works/{ident}/editorial',headers=auth())
+    assert listing.status_code == 200
+    data = listing.json()
+    assert data['commentaries'][0]['body'] == '初稿赏析。'
+    assert data['translations'][0]['blocks'] == ['Moon.']
+    assert data['pinyin'][0]['tokens'][0]['pinyin'] == 'míng'
+    assert data['dates'][0]['id'] == date['id']
+    new_comment = client.post(f'/admin/api/works/{ident}/commentaries/{commentary["id"]}/revisions',
+        json={'title':'新稿','body':'新稿赏析。'},headers=auth())
+    new_translation = client.post(f'/admin/api/works/{ident}/translations/{translation["id"]}/revisions',
+        json={'language_tag':'en','blocks':['Bright moon.']},headers=auth())
+    new_pinyin = client.post(f'/admin/api/works/{ident}/pinyin/{pinyin["id"]}/revisions',
+        json={'tokens':[{'paragraph_index':0,'char_index':0,'character':'明','pinyin':'míng2'}]},headers=auth())
+    assert new_comment.status_code == new_translation.status_code == new_pinyin.status_code == 200
+    after = client.get(f'/admin/api/works/{ident}/editorial',headers=auth()).json()
+    for key, old, new in [('commentaries',commentary,new_comment),('translations',translation,new_translation),('pinyin',pinyin,new_pinyin)]:
+        assert len(after[key]) == 2
+        assert after[key][0]['revises_id'] == old['id']
+        assert after[key][0]['status'] == 'staged'
+        assert after[key][1]['id'] == old['id']
+        assert after[key][1]['status'] == 'staged'
+    assert after['commentaries'][1]['body'] == '初稿赏析。'
+    assert after['translations'][1]['blocks'] == ['Moon.']
+    assert client.post(f'/admin/api/works/{ident+1}/commentaries/{commentary["id"]}/revisions',
+        json={'body':'跨作品'},headers=auth()).status_code in (404,422)

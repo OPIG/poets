@@ -184,3 +184,15 @@ body>main{height:calc(100vh - 74px);height:calc(100dvh - 74px);min-height:0;over
 .bio-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:13px}
 .bio-actions button{font-size:12px;padding:7px 11px}
 @media(max-width:760px){.bio-edition{padding:12px}.bio-actions button{flex:1}}
+
+/* 作者编辑按「基本资料 → 已有小传 → 生平事件 → 保存」纵向组织。 */
+.author-events{margin-top:16px}
+.section-add{display:block;width:100%;min-height:42px;margin-top:14px;border:1px dashed #8dab93;background:#f9fcf8;color:#2d6341;text-align:center;font-weight:600}
+.section-add:hover,.section-add:focus-visible{background:#eaf4e9;border-style:solid}
+.event-edition>strong{line-height:1.7;overflow-wrap:anywhere}
+
+/* 作品扩展材料按赏析、译文、拼音、年代纵向排列；新增操作固定在对应模块底部。 */
+.work-editorial{grid-column:1/-1;min-width:0}
+.work-editorial-section{margin-top:18px}
+.work-editorial-section .bio-edition details{margin:10px 0!important;padding:8px 10px;background:#fff;border:1px solid #e3ebe2}
+.work-editorial-section .bio-edition details p{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;font-size:13px;line-height:1.8}

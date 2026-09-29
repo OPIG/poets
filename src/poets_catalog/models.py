@@ -197,6 +197,8 @@ class TranslationEdition(Base):
     id: Mapped[int] = pk()
     work_version_id: Mapped[int] = mapped_column(ForeignKey("work_versions.id"))
     material_id: Mapped[int] = mapped_column(ForeignKey("materials.id"), unique=True)
+    revises_id: Mapped[int | None] = mapped_column(
+        ForeignKey("translation_editions.id", name="fk_translation_editions_revises"), index=True)
     language_tag: Mapped[str] = mapped_column(String(40))
     translator_name: Mapped[str | None] = mapped_column(Text)
     alignment_mode: Mapped[str] = mapped_column(String(16))
@@ -220,6 +222,8 @@ class Commentary(Base):
     id: Mapped[int] = pk()
     work_version_id: Mapped[int] = mapped_column(ForeignKey("work_versions.id"))
     material_id: Mapped[int] = mapped_column(ForeignKey("materials.id"), unique=True)
+    revises_id: Mapped[int | None] = mapped_column(
+        ForeignKey("commentaries.id", name="fk_commentaries_revises"), index=True)
     # 可空表示整篇；非空须与上层作品版本一致，由数据库触发器校验。
     work_paragraph_id: Mapped[int | None] = mapped_column(ForeignKey("work_paragraphs.id"))
     title: Mapped[str | None] = mapped_column(Text)
@@ -233,6 +237,8 @@ class PinyinSet(Base):
     id: Mapped[int] = pk()
     work_version_id: Mapped[int] = mapped_column(ForeignKey("work_versions.id"))
     material_id: Mapped[int] = mapped_column(ForeignKey("materials.id"), unique=True)
+    revises_id: Mapped[int | None] = mapped_column(
+        ForeignKey("pinyin_sets.id", name="fk_pinyin_sets_revises"), index=True)
     romanization: Mapped[str] = mapped_column(String(40), server_default="hanyu-pinyin")
     # 按段落序号和字符偏移保存标注；写入时仍需应用层校验字符边界。
     tokens: Mapped[list[dict[str, Any]]] = mapped_column(JSONB)

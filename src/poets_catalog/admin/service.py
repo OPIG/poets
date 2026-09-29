@@ -217,8 +217,13 @@ def create_biography(session: Session, author_id: int, data: BiographyInput, rev
     return bio
 
 
-def create_commentary(session: Session, work_id: int, data: CommentaryInput):
+def create_commentary(session: Session, work_id: int, data: CommentaryInput, revises_id: int | None = None):
     work = require(session, Work, work_id)
+    if revises_id is not None:
+        previous = require(session, Commentary, revises_id)
+        previous_version = require(session, WorkVersion, previous.work_version_id)
+        if previous_version.work_id != work_id:
+            raise HTTPException(422, "不能跨作品修订内容")
     version = session.scalar(select(WorkVersion).where(WorkVersion.work_id == work.id, WorkVersion.is_current.is_(True)))
     if version is None:
         raise HTTPException(409, "作品缺少当前版本")
@@ -228,16 +233,21 @@ def create_commentary(session: Session, work_id: int, data: CommentaryInput):
                         content_hash=digest(data.model_dump()))
     session.add(material)
     session.flush()
-    item = Commentary(work_version_id=version.id, material_id=material.id, title=data.title,
+    item = Commentary(work_version_id=version.id, material_id=material.id, revises_id=revises_id, title=data.title,
                       body=data.body, commentator_name=data.commentator_name)
     session.add(item)
     session.flush()
-    audit(session, "create", "commentary", item.id, {"work_id": work_id, "material_id": material.id})
+    audit(session, "revise" if revises_id is not None else "create", "commentary", item.id, {"work_id": work_id, "material_id": material.id})
     return item
 
 
-def create_translation(session: Session, work_id: int, data: TranslationInput):
+def create_translation(session: Session, work_id: int, data: TranslationInput, revises_id: int | None = None):
     work = require(session, Work, work_id)
+    if revises_id is not None:
+        previous = require(session, TranslationEdition, revises_id)
+        previous_version = require(session, WorkVersion, previous.work_version_id)
+        if previous_version.work_id != work_id:
+            raise HTTPException(422, "不能跨作品修订内容")
     version = session.scalar(select(WorkVersion).where(WorkVersion.work_id == work.id, WorkVersion.is_current.is_(True)))
     if version is None:
         raise HTTPException(409, "作品缺少当前版本")
@@ -247,14 +257,14 @@ def create_translation(session: Session, work_id: int, data: TranslationInput):
                         content_hash=digest(data.model_dump()))
     session.add(material)
     session.flush()
-    edition = TranslationEdition(work_version_id=version.id, material_id=material.id,
+    edition = TranslationEdition(work_version_id=version.id, material_id=material.id, revises_id=revises_id,
                                  language_tag=data.language_tag, translator_name=data.translator_name,
                                  alignment_mode="whole")
     session.add(edition)
     session.flush()
     session.add_all(TranslationBlock(edition_id=edition.id, block_index=i, body=block)
                     for i, block in enumerate(data.blocks))
-    audit(session, "create", "translation", edition.id, {"work_id": work_id, "material_id": material.id})
+    audit(session, "revise" if revises_id is not None else "create", "translation", edition.id, {"work_id": work_id, "material_id": material.id})
     return edition
 
 
@@ -340,9 +350,14 @@ def save_author_event(session: Session, author_id: int, data: AuthorEventInput, 
     return item
 
 
-def create_pinyin(session: Session, work_id: int, data: PinyinInput):
+def create_pinyin(session: Session, work_id: int, data: PinyinInput, revises_id: int | None = None):
     """逐字标注必须对齐当前不可变版本的段落和 Unicode 字符。"""
     require(session, Work, work_id)
+    if revises_id is not None:
+        previous = require(session, PinyinSet, revises_id)
+        previous_version = require(session, WorkVersion, previous.work_version_id)
+        if previous_version.work_id != work_id:
+            raise HTTPException(422, "不能跨作品修订内容")
     version = session.scalar(select(WorkVersion).where(WorkVersion.work_id == work_id, WorkVersion.is_current.is_(True)))
     if version is None:
         raise HTTPException(409, "作品缺少当前版本")
@@ -363,11 +378,11 @@ def create_pinyin(session: Session, work_id: int, data: PinyinInput):
                         content_hash=digest(serialized))
     session.add(material)
     session.flush()
-    item = PinyinSet(work_version_id=version.id, material_id=material.id, tokens=serialized,
+    item = PinyinSet(work_version_id=version.id, material_id=material.id, revises_id=revises_id, tokens=serialized,
                      romanization=data.romanization, alignment_sha256=version.content_hash)
     session.add(item)
     session.flush()
-    audit(session, "create", "pinyin", item.id, {"work_id": work_id, "material_id": material.id})
+    audit(session, "revise" if revises_id is not None else "create", "pinyin", item.id, {"work_id": work_id, "material_id": material.id})
     return item
 
 

@@ -275,6 +275,41 @@ def register_admin(app, db: Engine) -> None:
         service.archive_work(current, ident, restore=True)
         return {"id": ident, "status": "normal", "review_required": True}
 
+    @router.get("/api/works/{ident}/editorial", dependencies=[Depends(guard)])
+    def work_editorial(ident: int, current: Session = Depends(session)):
+        """包含历史版本的扩展内容，供作者编辑弹窗分区展示。"""
+        service.require(current, Work, ident)
+        versions = select(WorkVersion.id).where(WorkVersion.work_id == ident)
+        def material_info(item):
+            material = current.get(Material, item.material_id)
+            source = current.get(Source, material.source_id) if material and material.source_id else None
+            return {"material_id": item.material_id, "status": material.workflow_status if material else "unknown",
+                    "source_title": source.title if source else None, "revises_id": item.revises_id,
+                    "work_version_id": item.work_version_id}
+        commentaries = [{"id": item.id, "title": item.title, "body": item.body,
+                         "commentator_name": item.commentator_name, **material_info(item)}
+                        for item in current.scalars(select(Commentary).where(Commentary.work_version_id.in_(versions))
+                                                    .order_by(Commentary.id.desc())).all()]
+        translations = []
+        for item in current.scalars(select(TranslationEdition).where(TranslationEdition.work_version_id.in_(versions))
+                                    .order_by(TranslationEdition.id.desc())).all():
+            blocks = current.scalars(select(TranslationBlock.body).where(TranslationBlock.edition_id == item.id)
+                                      .order_by(TranslationBlock.block_index)).all()
+            translations.append({"id": item.id, "language_tag": item.language_tag,
+                                 "translator_name": item.translator_name, "blocks": blocks,
+                                 **material_info(item)})
+        pinyin = [{"id": item.id, "romanization": item.romanization, "tokens": item.tokens,
+                   **material_info(item)} for item in current.scalars(select(PinyinSet)
+                   .where(PinyinSet.work_version_id.in_(versions)).order_by(PinyinSet.id.desc())).all()]
+        dates = [{"id": item.id, "year_start": item.year_start, "year_end": item.year_end,
+                  "date_precision": item.date_precision, "confidence": item.confidence,
+                  "rationale": item.rationale, "source_id": item.source_id,
+                  "review_status": item.review_status, "is_preferred": item.is_preferred}
+                 for item in current.scalars(select(WorkDate).where(WorkDate.work_id == ident)
+                                              .order_by(WorkDate.year_start)).all()]
+        return {"commentaries": commentaries, "translations": translations,
+                "pinyin": pinyin, "dates": dates}
+
     @router.post("/api/works/{ident}/commentaries", dependencies=[Depends(guard)])
     def commentary_create(ident: int, data: CommentaryInput, current: Session = Depends(transaction)):
         item = service.create_commentary(current, ident, data)
@@ -284,6 +319,24 @@ def register_admin(app, db: Engine) -> None:
     def translation_create(ident: int, data: TranslationInput, current: Session = Depends(transaction)):
         item = service.create_translation(current, ident, data)
         return {"id": item.id, "material_id": item.material_id}
+
+    @router.post("/api/works/{ident}/commentaries/{item_id}/revisions", dependencies=[Depends(guard)])
+    def commentary_revise(ident: int, item_id: int, data: CommentaryInput,
+                          current: Session = Depends(transaction)):
+        item = service.create_commentary(current, ident, data, revises_id=item_id)
+        return {"id": item.id, "material_id": item.material_id, "revises_id": item.revises_id}
+
+    @router.post("/api/works/{ident}/translations/{item_id}/revisions", dependencies=[Depends(guard)])
+    def translation_revise(ident: int, item_id: int, data: TranslationInput,
+                           current: Session = Depends(transaction)):
+        item = service.create_translation(current, ident, data, revises_id=item_id)
+        return {"id": item.id, "material_id": item.material_id, "revises_id": item.revises_id}
+
+    @router.post("/api/works/{ident}/pinyin/{item_id}/revisions", dependencies=[Depends(guard)])
+    def pinyin_revise(ident: int, item_id: int, data: PinyinInput,
+                      current: Session = Depends(transaction)):
+        item = service.create_pinyin(current, ident, data, revises_id=item_id)
+        return {"id": item.id, "material_id": item.material_id, "revises_id": item.revises_id}
 
     @router.get("/api/materials", dependencies=[Depends(guard)])
     def materials(response: Response, status: str = "staged", limit: int = Query(30, ge=1, le=100),
